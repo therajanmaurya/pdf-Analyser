@@ -2,9 +2,13 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
+import logging
 from pdf_processing import extract_individual_pdf, process_all_pdfs
 from pdf_saving import save_all_pdfs
 from pdf_extraction import preview_extracted_tables, save_extracted_tables
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class PDFProcessor(QWidget):
@@ -74,6 +78,7 @@ class PDFProcessor(QWidget):
             self.selected_files.extend(files)
             self.update_file_list_container()
             self.instruction_label.setText("Work in progress")
+            logging.info(f"Selected files: {self.selected_files}")
         self.extract_button.setEnabled(bool(self.selected_files))
 
     def reset_selection(self):
@@ -83,6 +88,7 @@ class PDFProcessor(QWidget):
         self.update_file_list_container()
         self.extract_button.setEnabled(False)
         self.instruction_label.setText("Click On Select File to process the PDF")
+        logging.info("Selection reset")
 
     def save_all_pdfs(self):
         save_all_pdfs(self.selected_files)
@@ -98,6 +104,7 @@ class PDFProcessor(QWidget):
 
         self.thread.started.connect(self.worker.run)
         self.thread.start()
+        logging.info("Started extracting all PDFs")
 
     def update_file_list_container(self):
         for i in reversed(range(self.file_list_container.count())):
@@ -152,10 +159,12 @@ class PDFProcessor(QWidget):
 
         self.thread.started.connect(self.worker.run)
         self.thread.start()
+        logging.info(f"Started extracting PDF: {file}")
 
     def update_progress(self, index, progress):
         progress_bar = self.progress_bars[index]
         progress_bar.setValue(progress)
+        logging.info(f"Progress for file {index}: {progress}%")
 
 
 class ExtractWorker(QObject):
@@ -182,6 +191,7 @@ class ExtractWorker(QObject):
             self.progress.emit(index, progress)
 
         extract_individual_pdf(file, index, self.extracted_tables, self.file_list_container, progress_callback)
+        logging.info(f"Finished extracting file: {file}")
 
 
 if __name__ == "__main__":
