@@ -3,7 +3,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 import logging
-from pdf_processing import extract_individual_pdf, process_all_pdfs
+import os
+from pdf_processing import extract_individual_pdf, process_all_pdfs, create_filtered_pdf
 from pdf_saving import save_all_pdfs
 from pdf_extraction import preview_extracted_tables, save_extracted_tables
 
@@ -190,7 +191,8 @@ class ExtractWorker(QObject):
         def progress_callback(progress):
             self.progress.emit(index, progress)
 
-        extract_individual_pdf(file, index, self.extracted_tables, self.file_list_container, progress_callback)
+        filtered_pdf = create_filtered_pdf(file)
+        extract_individual_pdf(filtered_pdf, index, self.extracted_tables, self.file_list_container, progress_callback)
         logging.info(f"Finished extracting file: {file}")
 
 
