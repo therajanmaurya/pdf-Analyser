@@ -15,17 +15,25 @@ from pdf_processing_text import process_text_based_page
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Define the output directory relative to the project root
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_FOLDER = os.path.join(PROJECT_ROOT, "output")
-PROCESSING_PDFS_FOLDER = os.path.join(PROJECT_ROOT, "processing_pdfs")
-CROPPED_IMAGES_FOLDER = os.path.join(PROJECT_ROOT, "cropped_images")
 
-if not os.path.exists(PROCESSING_PDFS_FOLDER):
-    os.makedirs(PROCESSING_PDFS_FOLDER)
+# Function to get the Downloads folder path
+def get_downloads_folder():
+    if os.name == 'nt':  # For Windows
+        return os.path.join(os.getenv('USERPROFILE'), 'Downloads/PdfAnalyzer')
+    else:  # For macOS/Linux
+        return os.path.join(os.path.expanduser('~'), 'Downloads/PdfAnalyzer')
 
-if not os.path.exists(CROPPED_IMAGES_FOLDER):
-    os.makedirs(CROPPED_IMAGES_FOLDER)
+
+# Define the output directory in the Downloads folder
+DOWNLOADS_FOLDER = get_downloads_folder()
+OUTPUT_FOLDER = os.path.join(DOWNLOADS_FOLDER, "output")
+PROCESSING_PDFS_FOLDER = os.path.join(DOWNLOADS_FOLDER, "processing_pdfs")
+CROPPED_IMAGES_FOLDER = os.path.join(DOWNLOADS_FOLDER, "cropped_images")
+
+# Create directories if they don't exist
+for folder in [OUTPUT_FOLDER, PROCESSING_PDFS_FOLDER, CROPPED_IMAGES_FOLDER]:
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
 
 def create_filtered_pdf(pdf_file):
@@ -180,8 +188,6 @@ def save_all_tables_to_csv(tables, titles, output_file_path):
 
 def extract_individual_pdf(pdf_file, index, extracted_tables, file_list_container, progress_callback=None):
     logging.info(f"Extracting individual PDF: {pdf_file}")
-    if not os.path.exists(OUTPUT_FOLDER):
-        os.makedirs(OUTPUT_FOLDER)
     base_file_name = os.path.basename(pdf_file).replace('.pdf', '')
     output_file_path = os.path.join(OUTPUT_FOLDER, f"{base_file_name}_tables.csv")
     logging.info(f"Output will be saved to: {output_file_path}")

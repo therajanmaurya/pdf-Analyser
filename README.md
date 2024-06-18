@@ -37,6 +37,52 @@ python main.py
 `M\d{3}` Example: M001
 ```
 
+## Building the Executable
+To generate an executable (.exe) file for Windows, follow these steps:
+
+- Install PyInstaller:
+```sh
+pip install pyinstaller
+```
+
+- Navigate to your project directory:
+```sh
+cd path\to\your\project
+```
+
+- Run PyInstaller:
+```sh
+pyinstaller --onefile main.py
+```
+
+- Locate the executable:
+After PyInstaller finishes, you'll find your executable in the dist directory inside your project folder:
+```sh
+pdf_analyzer\dist\main.exe
+```
+
+Additional PyInstaller Options
+You can customize the executable with additional options:
+
+--icon=icon.ico: To add an icon to your executable.
+--add-data 'src;dest': To add non-Python files (e.g., data files).
+--noconsole: To disable the console window (useful for GUI applications).
+
+```sh
+# Activate your virtual environment if not already active
+source myenv/bin/activate  # On macOS/Linux
+myenv\Scripts\activate  # On Windows
+
+# Basic command
+pyinstaller --onefile main.py
+
+# With an icon and additional options
+pyinstaller --onefile --icon=logo.ico --hidden-import=module1 --hidden-import=module2 main.py
+
+# Using UPX (ensure UPX is installed and path is correct)
+pyinstaller --onefile --icon=myicon.ico --strip main.py
+```
+
 ## Features
 
 - Extracts tables from PDF files and saves them as CSV files.
