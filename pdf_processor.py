@@ -130,13 +130,10 @@ class PDFProcessor(QWidget):
             file_layout.addWidget(progress_bar)
             self.progress_bars.append(progress_bar)
 
-            container_widget = QWidget()
-            container_widget.setLayout(file_layout)
-            self.file_list_container.addWidget(container_widget)
-
             # Buttons for extracting, previewing, and saving extracted tables
             buttons_layout = QHBoxLayout()
             buttons_layout.setSpacing(0)  # Remove spacing between buttons and progress bar
+            buttons_layout.setContentsMargins(0, 0, 0, 0)  # Remove padding
 
             extract_button = QPushButton('Extract')
             extract_button.clicked.connect(lambda checked, f=file, i=index: self.extract_pdf(f, i))
@@ -152,7 +149,11 @@ class PDFProcessor(QWidget):
 
             buttons_widget = QWidget()
             buttons_widget.setLayout(buttons_layout)
-            self.file_list_container.addWidget(buttons_widget)
+            file_layout.addWidget(buttons_widget)
+
+            container_widget = QWidget()
+            container_widget.setLayout(file_layout)
+            self.file_list_container.addWidget(container_widget)
 
     def extract_pdf(self, file, index):
         self.thread = QThread()
