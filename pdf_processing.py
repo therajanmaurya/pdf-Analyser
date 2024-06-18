@@ -45,11 +45,9 @@ def create_filtered_pdf(pdf_file):
     document = fitz.open(pdf_file)
 
     for page_num in range(len(reader.pages)):
-        page = reader.pages[page_num]
         fitz_page = document.load_page(page_num)
-        if text_has_bottom_right_pattern(page) or image_has_bottom_right_pattern(fitz_page, page_num,
-                                                                                 pdf_cropped_images_folder):
-            writer.add_page(page)
+        if image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folder):
+            writer.add_page(reader.pages[page_num])
             logging.info(f"Page {page_num} added to filtered PDF.")
         else:
             logging.info(f"Page {page_num} does not match criteria and will not be added.")
@@ -59,20 +57,6 @@ def create_filtered_pdf(pdf_file):
     logging.info(f"Filtered PDF created successfully: {new_pdf_path}")
 
     return new_pdf_path
-
-
-def text_has_bottom_right_pattern(page):
-    logging.info("Checking for text pattern in the bottom-right corner of the page.")
-    text = page.extract_text()
-    if not text:
-        logging.info("No text found on page.")
-        return False
-
-    lines = text.split('\n')
-    bottom_right_text = lines[-1] if len(lines) > 0 else ''
-    match = re.search(r'^M\d+\.\d+', bottom_right_text) is not None
-    logging.info(f"Text pattern found: {match}")
-    return match
 
 
 def preprocess_image(image):
@@ -139,8 +123,7 @@ def extract_most_bold_text(ocr_result):
         if ocr_result['conf'][i] > 60:
             text = ocr_result['text'][i]
             if text.startswith('M') and re.match(r'^M.*', text):
-                boldness = ocr_result['font'][
-                    i] if 'font' in ocr_result else 0  # Assuming font weight indicates boldness
+                boldness = ocr_result['font'][i] if 'font' in ocr_result else 0  # Assuming font weight indicates boldness
                 if boldness > max_boldness:
                     bold_text = text
                     max_boldness = boldness
