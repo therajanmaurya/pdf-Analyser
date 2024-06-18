@@ -4,9 +4,11 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 import logging
 import os
+import subprocess
 from pdf_processing import extract_individual_pdf, process_all_pdfs, create_filtered_pdf
 from pdf_saving import save_all_pdfs
 from pdf_extraction import preview_extracted_tables, save_extracted_tables
+from PyPDF2 import PdfFileReader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -18,6 +20,7 @@ class PDFProcessor(QWidget):
         self.initUI()
         self.selected_files = []
         self.extracted_tables = {}
+        self.filtered_files = []  # Store paths to filtered PDFs
         self.progress_bars = []
 
     def initUI(self):
@@ -85,6 +88,7 @@ class PDFProcessor(QWidget):
     def reset_selection(self):
         self.selected_files = []
         self.extracted_tables = {}
+        self.filtered_files = []  # Reset filtered files
         self.progress_bars = []
         self.update_file_list_container()
         self.extract_button.setEnabled(False)
@@ -96,7 +100,7 @@ class PDFProcessor(QWidget):
 
     def extract_all_pdfs(self):
         self.thread = QThread()
-        self.worker = ExtractWorker(self.selected_files, self.extracted_tables, self.file_list_container)
+        self.worker = ExtractWorker(self.selected_files, self.extracted_tables, self.filtered_files, self.file_list_container)
         self.worker.moveToThread(self.thread)
         self.worker.progress.connect(self.update_progress)
         self.worker.finished.connect(self.thread.quit)
@@ -139,13 +143,11 @@ class PDFProcessor(QWidget):
             extract_button.clicked.connect(lambda checked, f=file, i=index: self.extract_pdf(f, i))
             buttons_layout.addWidget(extract_button)
 
-            preview_button = QPushButton('Preview Extracted Tables')
-            preview_button.clicked.connect(lambda checked, f=file: preview_extracted_tables(f, self.extracted_tables))
-            buttons_layout.addWidget(preview_button)
-
-            save_button = QPushButton('Save Extracted Tables')
-            save_button.clicked.connect(lambda checked, f=file: save_extracted_tables(f, self.extracted_tables))
-            buttons_layout.addWidget(save_button)
+            # Adding a placeholder for the Open button
+            open_button = QPushButton('Open')
+            open_button.setEnabled(False)
+            open_button.clicked.connect(lambda checked, i=index: self.open_pdf(i))
+            buttons_layout.addWidget(open_button)
 
             buttons_widget = QWidget()
             buttons_widget.setLayout(buttons_layout)
@@ -157,11 +159,12 @@ class PDFProcessor(QWidget):
 
     def extract_pdf(self, file, index):
         self.thread = QThread()
-        self.worker = ExtractWorker([file], self.extracted_tables, self.file_list_container, index)
+        self.worker = ExtractWorker([file], self.extracted_tables, self.filtered_files, self.file_list_container, index)
         self.worker.moveToThread(self.thread)
         self.worker.progress.connect(self.update_progress)
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
+        self.worker.enable_open_button.connect(self.enable_open_button)  # Connect the signal to the slot
         self.thread.finished.connect(self.thread.deleteLater)
 
         self.thread.started.connect(self.worker.run)
@@ -173,15 +176,36 @@ class PDFProcessor(QWidget):
         progress_bar.setValue(progress)
         logging.info(f"Progress for file {index}: {progress}%")
 
+    def enable_open_button(self, index):
+        # This function enables the 'Open' button after extraction
+        container_widget = self.file_list_container.itemAt(index).widget()
+        buttons_widget = container_widget.layout().itemAt(2).widget()
+        open_button = buttons_widget.layout().itemAt(1).widget()  # Assuming 'Open' is the second button
+        open_button.setEnabled(True)
+
+    def open_pdf(self, index):
+        try:
+            filtered_file = self.filtered_files[index]  # Get the filtered PDF path
+            if os.name == 'posix':
+                subprocess.call(['open', filtered_file])
+            elif os.name == 'nt':
+                os.startfile(filtered_file)
+            elif os.name == 'mac':
+                subprocess.call(['open', filtered_file])
+        except Exception as e:
+            logging.error(f"Error opening PDF: {e}")
+
 
 class ExtractWorker(QObject):
     progress = pyqtSignal(int, int)
     finished = pyqtSignal()
+    enable_open_button = pyqtSignal(int)  # Define a new signal
 
-    def __init__(self, files, extracted_tables, file_list_container, index=None):
+    def __init__(self, files, extracted_tables, filtered_files, file_list_container, index=None):
         super().__init__()
         self.files = files
         self.extracted_tables = extracted_tables
+        self.filtered_files = filtered_files  # Add filtered files list
         self.file_list_container = file_list_container
         self.index = index
 
@@ -198,7 +222,14 @@ class ExtractWorker(QObject):
             self.progress.emit(index, progress)
 
         filtered_pdf = create_filtered_pdf(file)
+        self.filtered_files.insert(index, filtered_pdf)  # Store the filtered PDF path
         extract_individual_pdf(filtered_pdf, index, self.extracted_tables, self.file_list_container, progress_callback)
+
+        # Check if the filtered PDF has at least one page
+        with open(filtered_pdf, 'rb') as f:
+            pdf_reader = PdfFileReader(f)
+            if pdf_reader.getNumPages() > 0:
+                self.enable_open_button.emit(index)  # Emit the signal to enable the Open button
         logging.info(f"Finished extracting file: {file}")
 
 
