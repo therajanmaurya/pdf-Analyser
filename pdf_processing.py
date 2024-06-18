@@ -117,7 +117,17 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
     # Extract the most bold text that starts with "M"
     most_bold_text = extract_most_bold_text(ocr_result)
     logging.info(f"Most bold text extracted: {most_bold_text}")
-    match = re.search(r'^M.*', most_bold_text) is not None
+
+    # Check if the extracted text matches any of the specified regex patterns
+    patterns = [
+        r'M\d+\.\d+',
+        r'M-\d{3}',
+        r'M\d+\.\d{2}',
+        r'M\d+-\d{3}',
+        r'M-\d+\.\d+',
+        r'M\d{3}'
+    ]
+    match = any(re.search(pattern, most_bold_text) for pattern in patterns)
     logging.info(f"OCR pattern found: {match}")
     return match
 

@@ -26,6 +26,17 @@ Run the `main.py` file to start the application:
 python main.py
 ```
 
+## Possible Regex
+
+```sh
+`M\d+\.\d+` Example: M2.1
+`M-\d{3}` Example: M-001
+`M\d+\.\d{2}` Example: M1.01
+`M\d+-\d{3}` Example: M1-100
+`M-\d+\.\d+` Example: M-1.0
+`M\d{3}` Example: M001
+```
+
 ## Features
 
 - Extracts tables from PDF files and saves them as CSV files.
