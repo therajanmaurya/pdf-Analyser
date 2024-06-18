@@ -116,8 +116,13 @@ class PDFProcessor(QWidget):
         self.progress_bars = []
         for index, file in enumerate(self.selected_files):
             file_layout = QHBoxLayout()
-            file_label = QLabel(file)
+
+            # Create alias for the file
+            alias = os.path.basename(file)
+
+            file_label = QLabel(alias)
             file_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            file_label.setToolTip(file)  # Show full path on hover
             file_layout.addWidget(file_label)
 
             progress_bar = QProgressBar()
