@@ -5,13 +5,13 @@ PyQt5~=5.15.10
 setuptools~=68.2.0
 camelot-py[cv]
 PyQt5
-PyPDF2<3.0.0
+PyPDF2~=3.0.1
 opencv-python
 PyMuPDF
 pytesseract~=0.3.10
 openai~=0.27.0
 
-Pillow==9.2.0
-opencv-python-headless==4.6.0.66
+Pillow==10.0.1
+opencv-python-headless==4.10.0.82
 fitz~=0.0.1.dev2
 pyinstaller
