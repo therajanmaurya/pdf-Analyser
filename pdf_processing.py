@@ -68,17 +68,22 @@ def create_filtered_pdf(pdf_file):
 def preprocess_image(image):
     # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # Improve contrast and sharpness
+    # Enhance contrast and sharpness
     gray = cv2.equalizeHist(gray)
     sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
     gray = cv2.filter2D(gray, -1, sharpen_kernel)
-    # Apply thresholding
-    _, binary_image = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
+    # Apply adaptive thresholding for black text on white background
+    adaptive_thresh_black_text = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11,
+                                                       2)
+    # Invert for white text on black background
+    adaptive_thresh_white_text = cv2.bitwise_not(adaptive_thresh_black_text)
     # Apply dilation and erosion to remove noise
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-    dilate = cv2.dilate(binary_image, kernel, iterations=1)
-    erode = cv2.erode(dilate, kernel, iterations=1)
-    return erode, binary_image
+    dilate_black = cv2.dilate(adaptive_thresh_black_text, kernel, iterations=1)
+    erode_black = cv2.erode(dilate_black, kernel, iterations=1)
+    dilate_white = cv2.dilate(adaptive_thresh_white_text, kernel, iterations=1)
+    erode_white = cv2.erode(dilate_white, kernel, iterations=1)
+    return erode_black, erode_white, adaptive_thresh_black_text, adaptive_thresh_white_text
 
 
 def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folder):
@@ -86,7 +91,7 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
 
     # Define the region of interest (bottom-right 250x150 pixels)
     width, height = fitz_page.rect.width, fitz_page.rect.height
-    box = fitz.Rect(width - 250, height - 150, width, height)
+    box = fitz.Rect(width - 350, height - 150, width, height)
 
     # Render the selected region to an image
     pix = fitz_page.get_pixmap(clip=box)
@@ -99,29 +104,43 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
 
     # Convert PIL image to numpy array
     image_np = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    preprocessed_image, binary_image = preprocess_image(image_np)
+    preprocessed_black, preprocessed_white, adaptive_thresh_black, adaptive_thresh_white = preprocess_image(image_np)
 
     # Convert back to PIL images
-    preprocessed_pil_image = Image.fromarray(preprocessed_image)
-    binary_pil_image = Image.fromarray(binary_image)
+    preprocessed_black_pil_image = Image.fromarray(preprocessed_black)
+    preprocessed_white_pil_image = Image.fromarray(preprocessed_white)
+    adaptive_thresh_black_pil_image = Image.fromarray(adaptive_thresh_black)
+    adaptive_thresh_white_pil_image = Image.fromarray(adaptive_thresh_white)
 
-    # Perform OCR on both preprocessed and binary images
+    # Perform OCR on all processed images
     custom_oem_psm_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'
 
-    ocr_result_preprocessed = pytesseract.image_to_data(preprocessed_pil_image, config=custom_oem_psm_config,
-                                                        output_type=pytesseract.Output.DICT)
-    ocr_result_binary = pytesseract.image_to_data(binary_pil_image, config=custom_oem_psm_config,
-                                                  output_type=pytesseract.Output.DICT)
+    ocr_result_preprocessed_black = pytesseract.image_to_data(preprocessed_black_pil_image,
+                                                              config=custom_oem_psm_config,
+                                                              output_type=pytesseract.Output.DICT)
+    ocr_result_preprocessed_white = pytesseract.image_to_data(preprocessed_white_pil_image,
+                                                              config=custom_oem_psm_config,
+                                                              output_type=pytesseract.Output.DICT)
+    ocr_result_adaptive_black = pytesseract.image_to_data(adaptive_thresh_black_pil_image, config=custom_oem_psm_config,
+                                                          output_type=pytesseract.Output.DICT)
+    ocr_result_adaptive_white = pytesseract.image_to_data(adaptive_thresh_white_pil_image, config=custom_oem_psm_config,
+                                                          output_type=pytesseract.Output.DICT)
 
-    logging.debug(f"OCR result (preprocessed): {ocr_result_preprocessed}")
-    logging.debug(f"OCR result (binary): {ocr_result_binary}")
+    logging.debug(f"OCR result (preprocessed black): {ocr_result_preprocessed_black}")
+    logging.debug(f"OCR result (preprocessed white): {ocr_result_preprocessed_white}")
+    logging.debug(f"OCR result (adaptive black): {ocr_result_adaptive_black}")
+    logging.debug(f"OCR result (adaptive white): {ocr_result_adaptive_white}")
 
-    # Extract the most bold text that starts with "M"
-    most_bold_text_preprocessed = extract_most_bold_text(ocr_result_preprocessed)
-    most_bold_text_binary = extract_most_bold_text(ocr_result_binary)
+    # Extract the most bold text that starts with "M" from all results
+    most_bold_text_preprocessed_black = extract_most_bold_text(ocr_result_preprocessed_black)
+    most_bold_text_preprocessed_white = extract_most_bold_text(ocr_result_preprocessed_white)
+    most_bold_text_adaptive_black = extract_most_bold_text(ocr_result_adaptive_black)
+    most_bold_text_adaptive_white = extract_most_bold_text(ocr_result_adaptive_white)
 
-    logging.info(f"Most bold text extracted (preprocessed): {most_bold_text_preprocessed}")
-    logging.info(f"Most bold text extracted (binary): {most_bold_text_binary}")
+    logging.info(f"Most bold text extracted (preprocessed black): {most_bold_text_preprocessed_black}")
+    logging.info(f"Most bold text extracted (preprocessed white): {most_bold_text_preprocessed_white}")
+    logging.info(f"Most bold text extracted (adaptive black): {most_bold_text_adaptive_black}")
+    logging.info(f"Most bold text extracted (adaptive white): {most_bold_text_adaptive_white}")
 
     # Check if the extracted text matches any of the specified regex patterns
     patterns = [
@@ -132,16 +151,21 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
         r'M-\d+\.\d+',
         r'M\d{3}',
         r'M.\.\d{2}',
-        r'M.*'
+        r'M.*',
+        r'M[a-zA-Z]\d+\.\d+'
     ]
 
-    match_preprocessed = any(re.search(pattern, most_bold_text_preprocessed) for pattern in patterns)
-    match_binary = any(re.search(pattern, most_bold_text_binary) for pattern in patterns)
+    match_preprocessed_black = any(re.search(pattern, most_bold_text_preprocessed_black) for pattern in patterns)
+    match_preprocessed_white = any(re.search(pattern, most_bold_text_preprocessed_white) for pattern in patterns)
+    match_adaptive_black = any(re.search(pattern, most_bold_text_adaptive_black) for pattern in patterns)
+    match_adaptive_white = any(re.search(pattern, most_bold_text_adaptive_white) for pattern in patterns)
 
-    logging.info(f"OCR pattern found (preprocessed): {match_preprocessed}")
-    logging.info(f"OCR pattern found (binary): {match_binary}")
+    logging.info(f"OCR pattern found (preprocessed black): {match_preprocessed_black}")
+    logging.info(f"OCR pattern found (preprocessed white): {match_preprocessed_white}")
+    logging.info(f"OCR pattern found (adaptive black): {match_adaptive_black}")
+    logging.info(f"OCR pattern found (adaptive white): {match_adaptive_white}")
 
-    return match_preprocessed or match_binary
+    return match_preprocessed_black or match_preprocessed_white or match_adaptive_black or match_adaptive_white
 
 
 def extract_most_bold_text(ocr_result):

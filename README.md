@@ -35,6 +35,7 @@ python main.py
 `M\d+-\d{3}` Example: M1-100
 `M-\d+\.\d+` Example: M-1.0
 `M\d{3}` Example: M001
+`M[a-zA-Z]\d+\.\d+` Example: ME1.1
 ```
 
 ## Building the Executable
