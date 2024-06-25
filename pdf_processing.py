@@ -2,7 +2,6 @@ import fitz  # PyMuPDF
 import logging
 import os
 import numpy as np
-import pandas as pd
 import re
 import cv2
 from PyPDF2 import PdfWriter, PdfReader
@@ -10,7 +9,6 @@ from PIL import Image
 import pytesseract
 
 from pdf_processing_image import process_image_based_page
-from pdf_processing_text import process_text_based_page
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -70,13 +68,17 @@ def create_filtered_pdf(pdf_file):
 def preprocess_image(image):
     # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Improve contrast and sharpness
+    gray = cv2.equalizeHist(gray)
+    sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+    gray = cv2.filter2D(gray, -1, sharpen_kernel)
     # Apply thresholding
-    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
+    _, binary_image = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
     # Apply dilation and erosion to remove noise
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-    dilate = cv2.dilate(thresh, kernel, iterations=1)
+    dilate = cv2.dilate(binary_image, kernel, iterations=1)
     erode = cv2.erode(dilate, kernel, iterations=1)
-    return erode
+    return erode, binary_image
 
 
 def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folder):
@@ -97,18 +99,29 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
 
     # Convert PIL image to numpy array
     image_np = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    preprocessed_image = preprocess_image(image_np)
+    preprocessed_image, binary_image = preprocess_image(image_np)
 
-    # Convert back to PIL image
+    # Convert back to PIL images
     preprocessed_pil_image = Image.fromarray(preprocessed_image)
+    binary_pil_image = Image.fromarray(binary_image)
 
-    # Perform OCR on the preprocessed image region
-    ocr_result = pytesseract.image_to_data(preprocessed_pil_image, output_type=pytesseract.Output.DICT)
-    logging.debug(f"OCR result: {ocr_result}")
+    # Perform OCR on both preprocessed and binary images
+    custom_oem_psm_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'
+
+    ocr_result_preprocessed = pytesseract.image_to_data(preprocessed_pil_image, config=custom_oem_psm_config,
+                                                        output_type=pytesseract.Output.DICT)
+    ocr_result_binary = pytesseract.image_to_data(binary_pil_image, config=custom_oem_psm_config,
+                                                  output_type=pytesseract.Output.DICT)
+
+    logging.debug(f"OCR result (preprocessed): {ocr_result_preprocessed}")
+    logging.debug(f"OCR result (binary): {ocr_result_binary}")
 
     # Extract the most bold text that starts with "M"
-    most_bold_text = extract_most_bold_text(ocr_result)
-    logging.info(f"Most bold text extracted: {most_bold_text}")
+    most_bold_text_preprocessed = extract_most_bold_text(ocr_result_preprocessed)
+    most_bold_text_binary = extract_most_bold_text(ocr_result_binary)
+
+    logging.info(f"Most bold text extracted (preprocessed): {most_bold_text_preprocessed}")
+    logging.info(f"Most bold text extracted (binary): {most_bold_text_binary}")
 
     # Check if the extracted text matches any of the specified regex patterns
     patterns = [
@@ -118,11 +131,17 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
         r'M\d+-\d{3}',
         r'M-\d+\.\d+',
         r'M\d{3}',
-        r'M.\.\d{2}'
+        r'M.\.\d{2}',
+        r'M.*'
     ]
-    match = any(re.search(pattern, most_bold_text) for pattern in patterns)
-    logging.info(f"OCR pattern found: {match}")
-    return match
+
+    match_preprocessed = any(re.search(pattern, most_bold_text_preprocessed) for pattern in patterns)
+    match_binary = any(re.search(pattern, most_bold_text_binary) for pattern in patterns)
+
+    logging.info(f"OCR pattern found (preprocessed): {match_preprocessed}")
+    logging.info(f"OCR pattern found (binary): {match_binary}")
+
+    return match_preprocessed or match_binary
 
 
 def extract_most_bold_text(ocr_result):
@@ -147,15 +166,9 @@ def process_pdf_file(pdf_file, output_file_path, progress_callback=None):
     table_titles = []
 
     for page_num in range(total_pages):
-        page = document.load_page(page_num)
-        text = page.get_text("text")
 
-        if text.strip():  # Text-based page
-            logging.info(f"Processing text-based page {page_num}.")
-            tables, titles = process_text_based_page(pdf_file, page_num)
-        else:  # Image-based page
-            logging.info(f"Processing image-based page {page_num}.")
-            tables, titles = process_image_based_page(pdf_file, page_num)
+        logging.info(f"Processing image-based page {page_num}.")
+        tables, titles = process_image_based_page(pdf_file, page_num)
 
         all_tables.extend(tables)
         table_titles.extend(titles)

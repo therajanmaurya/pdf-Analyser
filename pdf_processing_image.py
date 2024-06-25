@@ -76,6 +76,9 @@ def process_image_based_page(pdf_file, page_num):
     except Exception as e:
         logging.error(f"Error processing page {page_num + 1}: {e}")
         return [], []
+    finally:
+        if os.path.exists(image_path):
+            os.remove(image_path)
 
 
 # Example usage

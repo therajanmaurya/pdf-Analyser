@@ -8,7 +8,7 @@ import subprocess
 from pdf_processing import extract_individual_pdf, process_all_pdfs, create_filtered_pdf
 from pdf_saving import save_all_pdfs
 from pdf_extraction import preview_extracted_tables, save_extracted_tables
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfReader  # Correct import for PdfReader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -227,8 +227,8 @@ class ExtractWorker(QObject):
 
         # Check if the filtered PDF has at least one page
         with open(filtered_pdf, 'rb') as f:
-            pdf_reader = PdfFileReader(f)
-            if pdf_reader.getNumPages() > 0:
+            pdf_reader = PdfReader(f)
+            if len(pdf_reader.pages) > 0:
                 self.enable_open_button.emit(index)  # Emit the signal to enable the Open button
         logging.info(f"Finished extracting file: {file}")
 
