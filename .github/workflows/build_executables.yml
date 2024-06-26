@@ -40,6 +40,13 @@ jobs:
           name: executable-${{ matrix.os }}
           path: dist/
 
-      - name: Cleanup
+      - name: Cleanup (Linux and macOS)
+        if: runner.os != 'Windows'
         run: |
           rm -rf build dist *.spec
+
+      - name: Cleanup (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Remove-Item -Recurse -Force build, dist, *.spec
+        shell: pwsh
