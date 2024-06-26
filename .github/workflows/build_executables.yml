@@ -34,7 +34,22 @@ jobs:
           pyinstaller --onefile BruckerCo.py
         shell: bash
 
-      - name: Upload artifact
+      - name: Create .dmg (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install create-dmg
+          create-dmg 'dist/BruckerCo.app' dist/
+        shell: bash
+
+      - name: Upload artifact (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v3
+        with:
+          name: executable-macos
+          path: dist/*.dmg
+
+      - name: Upload artifact (Linux and Windows)
+        if: runner.os != 'macOS'
         uses: actions/upload-artifact@v3
         with:
           name: executable-${{ matrix.os }}
