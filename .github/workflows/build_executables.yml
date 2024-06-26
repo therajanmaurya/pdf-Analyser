@@ -38,7 +38,9 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install create-dmg
-          create-dmg 'dist/BruckerCo.app' dist/
+          mkdir -p dist/BruckerCo.app/Contents/MacOS
+          mv dist/BruckerCo dist/BruckerCo.app/Contents/MacOS/
+          create-dmg --overwrite dist/BruckerCo.app dist/BruckerCo.dmg
         shell: bash
 
       - name: Upload artifact (macOS)
@@ -46,7 +48,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: executable-macos
-          path: dist/*.dmg
+          path: dist/BruckerCo.dmg
 
       - name: Upload artifact (Linux and Windows)
         if: runner.os != 'macOS'
