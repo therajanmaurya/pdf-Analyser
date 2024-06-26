@@ -23,7 +23,7 @@ pip install -r requirements.txt
 Run the `main.py` file to start the application:
 
 ```sh
-python main.py
+python BruckerCo.py
 ```
 
 ## Possible Regex
@@ -53,7 +53,7 @@ cd path\to\your\project
 
 - Run PyInstaller:
 ```sh
-pyinstaller --onefile main.py
+pyinstaller --onefile BruckerCo.py
 ```
 
 - Locate the executable:
@@ -75,13 +75,13 @@ source myenv/bin/activate  # On macOS/Linux
 myenv\Scripts\activate  # On Windows
 
 # Basic command
-pyinstaller --onefile main.py
+pyinstaller --onefile BruckerCo.py
 
 # With an icon and additional options
-pyinstaller --onefile --icon=logo.ico --hidden-import=module1 --hidden-import=module2 main.py
+pyinstaller --onefile --icon=logo.ico --hidden-import=module1 --hidden-import=module2 BruckerCo.py
 
 # Using UPX (ensure UPX is installed and path is correct)
-pyinstaller --onefile --icon=myicon.ico --strip main.py
+pyinstaller --onefile --icon=myicon.ico --strip BruckerCo.py
 ```
 
 ## Features
