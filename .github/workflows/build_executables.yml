@@ -40,7 +40,7 @@ jobs:
           brew install create-dmg
           mkdir -p dist/BruckerCo.app/Contents/MacOS
           mv dist/BruckerCo dist/BruckerCo.app/Contents/MacOS/
-          create-dmg dist/BruckerCo.app dist/BruckerCo.dmg
+          create-dmg --volname "BruckerCo" --window-size 800x600 --icon-size 100 dist/BruckerCo.app dist/BruckerCo.dmg
         shell: bash
 
       - name: Upload artifact (macOS)
