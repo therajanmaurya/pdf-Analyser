@@ -10,19 +10,6 @@ a = Analysis(
     binaries=[],
     datas=[],
     hiddenimports=[
-        'pdfplumber',
-        'pandas',
-        'tk',
-        'PyQt5',
-        'camelot',
-        'PyPDF2',
-        'opencv-python',
-        'PyMuPDF',
-        'pytesseract',
-        'openai',
-        'Pillow',
-        'opencv-python-headless',
-        'fitz'
         'frontend'
     ],
     hookspath=[],
