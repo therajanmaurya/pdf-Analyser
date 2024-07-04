@@ -1,0 +1,15 @@
+; script.bcs
+
+[Setup]
+AppName=PDF Tool
+AppVersion=1.0
+DefaultDirName={pf}\PDF Tool
+DefaultGroupName=PDF Tool
+OutputDir=Output
+OutputBaseFilename=pdf_tool_installer
+
+[Files]
+Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion
+
+[Icons]
+Name: "{group}\PDF Tool"; Filename: "{app}\pdf_tool.exe"

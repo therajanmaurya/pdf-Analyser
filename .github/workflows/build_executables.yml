@@ -1,47 +1,49 @@
-name: Build Windows Executable
+name: Build and Release
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
-    name: Build and Package
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'  # Adjust Python version if needed
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'  # specify your Python version
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
 
-    - name: Uninstall pathlib
-      run: |
-        python -m pip uninstall -y pathlib
+      - name: Build executable
+        run: pyinstaller main.spec
 
-    - name: Install UPX
-      run: |
-        curl -L https://github.com/upx/upx/releases/download/v3.96/upx-3.96-win64.zip -o upx.zip
-        tar -xvf upx.zip
-        mv upx-3.96-win64 upx
+      - name: Setup BruckerCo Setup
+        run: |
+          Invoke-WebRequest -Uri "https://example.com/BruckerCoSetupInstaller.exe" -OutFile "BruckerCoSetupInstaller.exe"
+          Start-Process -FilePath "BruckerCoSetupInstaller.exe" -ArgumentList "/VERYSILENT" -Wait
+        shell: powershell
 
-    - name: Build executable for Windows
-      run: |
-        pyinstaller BruckerCo.spec --onefile --name BruckerCo_Windows --upx-dir upx
+      - name: Create installer
+        run: |
+          mkdir output
+          .\create_installer.ps1 -SourceDir "dist\pdf_tool" -OutputDir "output" -InstallerScript ".\script.bcs"
+        shell: powershell
 
-    - name: Archive build artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: windows-build
-        path: dist/
+      - name: Upload Release Asset
+        uses: actions/upload-artifact@v2
+        with:
+          name: PDF_Tool_Installer
+          path: output\pdf_tool_installer.exe
