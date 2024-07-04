@@ -49,6 +49,15 @@ if (-Not (Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir | Out-Null
 }
 
+# Copy BruckerCo Setup installer to source directory
+$BruckerCoSetupInstaller = ".\BruckerCoSetupInstaller.exe"
+if (Test-Path $BruckerCoSetupInstaller) {
+    Copy-Item -Path $BruckerCoSetupInstaller -Destination $SourceDir
+} else {
+    Write-Error "BruckerCo Setup Installer not found at $BruckerCoSetupInstaller"
+    exit 1
+}
+
 # Run BruckerCo Setup Compiler
 try {
     & $BruckerCoSetupCompiler $InstallerScript

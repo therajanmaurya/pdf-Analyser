@@ -10,6 +10,8 @@ OutputBaseFilename=pdf_tool_installer
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\BruckerCoSetupInstaller.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\PDF Tool"; Filename: "{app}\pdf_tool.exe"
+Name: "{group}\BruckerCo Setup Installer"; Filename: "{app}\BruckerCoSetupInstaller.exe"

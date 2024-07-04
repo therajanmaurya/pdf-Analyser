@@ -30,15 +30,10 @@ jobs:
       - name: Build executable
         run: pyinstaller main.spec
 
-      - name: Setup BruckerCo Setup
-        run: |
-          Invoke-WebRequest -Uri "https://example.com/BruckerCoSetupInstaller.exe" -OutFile "BruckerCoSetupInstaller.exe"
-          Start-Process -FilePath "BruckerCoSetupInstaller.exe" -ArgumentList "/VERYSILENT" -Wait
-        shell: powershell
-
       - name: Create installer
         run: |
           mkdir output
+          Copy-Item -Path .\BruckerCoSetupInstaller.exe -Destination dist\pdf_tool
           .\create_installer.ps1 -SourceDir "dist\pdf_tool" -OutputDir "output" -InstallerScript ".\script.bcs"
         shell: powershell
 
