@@ -30,9 +30,15 @@ jobs:
       run: |
         python -m pip uninstall -y pathlib
 
+    - name: Install UPX
+      run: |
+        curl -L https://github.com/upx/upx/releases/download/v3.96/upx-3.96-win64.zip -o upx.zip
+        tar -xvf upx.zip
+        mv upx-3.96-win64 upx
+
     - name: Build executable for Windows
       run: |
-        pyinstaller --onefile --name BruckerCo_Windows BruckerCo.py
+        pyinstaller BruckerCo.spec --onefile --name BruckerCo_Windows --upx-dir upx
 
     - name: Archive build artifacts
       uses: actions/upload-artifact@v2
