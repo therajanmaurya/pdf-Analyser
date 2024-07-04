@@ -30,16 +30,14 @@ jobs:
 
       - name: Build executable
         run: pyinstaller main.spec
-        shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
-        env:
-          pythonLocation: C:\hostedtoolcache\windows\Python\3.9.13\x64
+        shell: pwsh
 
       - name: Create installer
         run: |
-          mkdir output
-          Copy-Item -Path .\BruckerCoSetupInstaller.exe -Destination dist\pdf_tool
-          .\create_installer.ps1 -SourceDir "dist\pdf_tool" -OutputDir "output" -InstallerScript ".\script.bcs"
-        shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+          mkdir -Force output
+          Copy-Item -Path .\BruckerCoSetupInstaller.exe -Destination .\dist\pdf_tool
+          .\create_installer.ps1 -SourceDir ".\dist\pdf_tool" -OutputDir ".\output" -InstallerScript ".\script.bcs"
+        shell: pwsh
 
       - name: Upload Release Asset
         uses: actions/upload-artifact@v2

@@ -5,21 +5,21 @@
 block_cipher = None
 
 a = Analysis(
-    ['BruckerCo.py'],
-    pathex=[],
+    ['pdf_extraction.py', 'pdf_processing_image.py', 'pdf_processing_text.py', 'pdf_processing.py', 'pdf_processor.py', 'pdf_saving.py'],
+    pathex=['.'],  # Ensure this is set to the relative path
     binaries=[],
     datas=[],
     hiddenimports=[
-        'frontend',  # Add any additional hidden imports here
+    'pdfplumber', 'pandas', 'tk', 'PyQt5', 'camelot-py[cv]', 'PyPDF2', 'opencv-python', 'PyMuPDF', 'pytesseract',
+    'openai', 'Pillow', 'opencv-python-headless', 'fitz', 'frontend',  # Add any additional hidden imports here
     ],
     hookspath=[],
     runtime_hooks=[],
-    excludes=[
-        'tkinter', 'pathlib',  # Exclude unnecessary modules
-    ],
+    excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
+    noarchive=False,
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
@@ -29,13 +29,11 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='BruckerCo_Windows',
+    name='pdf_tool',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,  # Enable UPX compression
-    upx_exclude=[],
-    runtime_tmpdir=None,
+    upx=True,
     console=True,
 )
 
@@ -45,7 +43,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,  # Enable UPX compression
+    upx=True,
     upx_exclude=[],
-    name='BruckerCo_Windows'
+    name='pdf_tool'
 )
