@@ -30,20 +30,26 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
+    - name: Install macOS dependencies
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew update
+        brew install libomp
+
     - name: Build executable for Ubuntu
       if: matrix.os == 'ubuntu-latest'
       run: |
-        pyinstaller --onefile BruckerCo.py
+        pyinstaller --onefile --name BruckerCo_Ubuntu BruckerCo.py
 
     - name: Build executable for macOS
       if: matrix.os == 'macos-latest'
       run: |
-        pyinstaller --onefile BruckerCo.py
+        pyinstaller --onefile --name BruckerCo_Mac BruckerCo.py
 
     - name: Build executable for Windows
       if: matrix.os == 'windows-latest'
       run: |
-        pyinstaller --onefile BruckerCo.py
+        pyinstaller --onefile --name BruckerCo_Windows BruckerCo.py
 
     - name: Archive build artifacts
       uses: actions/upload-artifact@v2
