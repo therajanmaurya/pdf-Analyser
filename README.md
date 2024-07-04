@@ -36,6 +36,7 @@ python BruckerCo.py
 `M-\d+\.\d+` Example: M-1.0
 `M\d{3}` Example: M001
 `M[a-zA-Z]\d+\.\d+` Example: ME1.1
+`M\d{1,2}-\d{2}` Example: M1-25
 ```
 
 ## Building the Executable

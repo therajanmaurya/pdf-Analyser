@@ -91,7 +91,7 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
 
     # Define the region of interest (bottom-right 250x150 pixels)
     width, height = fitz_page.rect.width, fitz_page.rect.height
-    box = fitz.Rect(width - 350, height - 150, width, height)
+    box = fitz.Rect(width - 350, height - 200, width, height)
 
     # Render the selected region to an image
     pix = fitz_page.get_pixmap(clip=box)
@@ -152,7 +152,9 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
         r'M\d{3}',
         r'M.\.\d{2}',
         r'M.*',
-        r'M[a-zA-Z]\d+\.\d+'
+        r'M[a-zA-Z]\d+\.\d+',
+        r'M\d{1,2}-\d{2}',
+        r'\bM\S*'
     ]
 
     match_preprocessed_black = any(re.search(pattern, most_bold_text_preprocessed_black) for pattern in patterns)
