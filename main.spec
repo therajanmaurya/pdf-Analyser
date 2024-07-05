@@ -1,16 +1,27 @@
-# main.spec
-
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
 
 a = Analysis(
-    ['pdf_extraction.py', 'pdf_processing_image.py', 'pdf_processing_text.py', 'pdf_processing.py', 'pdf_processor.py', 'pdf_saving.py'],
-    pathex=['.'],  # Ensure this is set to the relative path
+    ['BruckerCo.py'],
+    pathex=['.'],
     binaries=[],
     datas=[],
     hiddenimports=[
-        'frontend'
+        'pdfplumber',
+        'pandas',
+        'tkinter',
+        'PyQt5',
+        'setuptools',
+        'camelot',
+        'PyPDF2',
+        'cv2',
+        'fitz',
+        'fitz.frontend',  # Adding fitz.frontend to hidden imports
+        'pytesseract',
+        'openai',
+        'Pillow',
+        'opencv_python_headless',
     ],
     hookspath=[],
     runtime_hooks=[],
@@ -18,7 +29,6 @@ a = Analysis(
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
-    noarchive=False,
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
@@ -28,11 +38,13 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='pdf_tool',
+    name='BruckerCo',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
     console=True,
 )
 
@@ -44,5 +56,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='pdf_tool'
+    name='BruckerCo',
 )
