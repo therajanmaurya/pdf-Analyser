@@ -14,19 +14,19 @@ from pdf_processing_image import process_image_based_page
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-# Function to get the Downloads folder path
-def get_downloads_folder():
+# Function to get the Desktop folder path
+def get_desktop_folder():
     if os.name == 'nt':  # For Windows
-        return os.path.join(os.getenv('USERPROFILE'), 'Downloads/PdfAnalyzer')
+        return os.path.join(os.getenv('USERPROFILE'), 'Desktop/PdfAnalyzer')
     else:  # For macOS/Linux
-        return os.path.join(os.path.expanduser('~'), 'Downloads/PdfAnalyzer')
+        return os.path.join(os.path.expanduser('~'), 'Desktop/PdfAnalyzer')
 
 
-# Define the output directory in the Downloads folder
-DOWNLOADS_FOLDER = get_downloads_folder()
-OUTPUT_FOLDER = os.path.join(DOWNLOADS_FOLDER, "output")
-PROCESSING_PDFS_FOLDER = os.path.join(DOWNLOADS_FOLDER, "processing_pdfs")
-CROPPED_IMAGES_FOLDER = os.path.join(DOWNLOADS_FOLDER, "cropped_images")
+# Define the output directory on the Desktop
+DESKTOP_FOLDER = get_desktop_folder()
+OUTPUT_FOLDER = os.path.join(DESKTOP_FOLDER, "output")
+PROCESSING_PDFS_FOLDER = os.path.join(DESKTOP_FOLDER, "processing_pdfs")
+CROPPED_IMAGES_FOLDER = os.path.join(DESKTOP_FOLDER, "cropped_images")
 
 # Create directories if they don't exist
 for folder in [OUTPUT_FOLDER, PROCESSING_PDFS_FOLDER, CROPPED_IMAGES_FOLDER]:
