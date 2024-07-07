@@ -15,3 +15,4 @@ Pillow==10.0.1
 opencv-python-headless==4.10.0.82
 fitz~=0.0.1.dev2
 pyinstaller
+numpy<2

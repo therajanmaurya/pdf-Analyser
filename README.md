@@ -17,7 +17,7 @@ This project is a PDF Analyzer tool that extracts tables from PDF files and save
 ```sh
 pip install -r requirements.txt
 ```
-
+ 
 ## Usage
 
 Run the `main.py` file to start the application:
@@ -74,6 +74,7 @@ You can customize the executable with additional options:
 # Activate your virtual environment if not already active
 source myenv/bin/activate  # On macOS/Linux
 myenv\Scripts\activate  # On Windows
+python -m venv venv
 
 # Basic command
 pyinstaller --onefile BruckerCo.py
