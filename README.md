@@ -91,3 +91,9 @@ pyinstaller --onefile --icon=myicon.ico --strip BruckerCo.py
 - Extracts tables from PDF files and saves them as CSV files.
 - Provides a simple UI for selecting multiple PDF files.
 - Displays a progress bar for each PDF file being processed.
+
+
+## Run Exe and save crash report
+`
+.\BruckerCo.exe > crash_log.txt 2>&1
+`
