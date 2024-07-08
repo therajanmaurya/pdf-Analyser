@@ -1,18 +1,17 @@
-pdfplumber~=0.11.1
 pandas~=2.2.2
-tk
 PyQt5~=5.15.10
 setuptools~=68.2.0
-camelot-py[cv]
-PyQt5
 PyPDF2~=3.0.1
-opencv-python
-PyMuPDF
+opencv-python~=4.10.0.84
+PyMuPDF~=1.24.7
 pytesseract~=0.3.10
-openai~=0.27.0
 
 Pillow==10.0.1
-opencv-python-headless==4.10.0.82
-fitz~=0.0.1.dev2
-pyinstaller
+pyinstaller~=6.8.0
 numpy<2
+pip~=21.2.4
+pathlib~=1.0.1
+configparser~=7.0.0
+attrs~=23.2.0
+cryptography~=42.0.8
+filelock~=3.15.4

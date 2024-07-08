@@ -1,4 +1,4 @@
-import fitz  # PyMuPDF
+import pymupdf
 import logging
 import os
 import numpy as np
@@ -48,7 +48,7 @@ def create_filtered_pdf(pdf_file):
     if not os.path.exists(pdf_cropped_images_folder):
         os.makedirs(pdf_cropped_images_folder)
 
-    document = fitz.open(pdf_file)
+    document = pymupdf.open(pdf_file)
 
     for page_num in range(len(reader.pages)):
         fitz_page = document.load_page(page_num)
@@ -91,7 +91,7 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
 
     # Define the region of interest (bottom-right 250x150 pixels)
     width, height = fitz_page.rect.width, fitz_page.rect.height
-    box = fitz.Rect(width - 350, height - 200, width, height)
+    box = pymupdf.Rect(width - 350, height - 200, width, height)
 
     # Render the selected region to an image
     pix = fitz_page.get_pixmap(clip=box)
@@ -185,7 +185,7 @@ def extract_most_bold_text(ocr_result):
 
 def process_pdf_file(pdf_file, output_file_path, progress_callback=None):
     logging.info(f"Starting to process PDF file: {pdf_file}")
-    document = fitz.open(pdf_file)
+    document = pymupdf.open(pdf_file)
     total_pages = len(document)
     logging.info(f"Total pages to process: {total_pages}")
     all_tables = []

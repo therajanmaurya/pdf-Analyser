@@ -1,7 +1,7 @@
 import cv2
 import pytesseract
 from PIL import Image
-import fitz  # PyMuPDF
+import pymupdf  # PyMuPDF
 import logging
 import pandas as pd
 import re
@@ -54,7 +54,7 @@ def extract_tables_from_image_text(text):
 
 def process_image_based_page(pdf_file, page_num):
     try:
-        document = fitz.open(pdf_file)
+        document = pymupdf.open(pdf_file)
         page = document.load_page(page_num)
         pix = page.get_pixmap()
         image_path = f"page_{page_num}.png"
