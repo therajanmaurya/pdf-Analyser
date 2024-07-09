@@ -30,7 +30,7 @@ jobs:
         python -m pip uninstall -y pathlib
     - name: Build executable for Windows
       run: |
-        pyinstaller --onefile --name BruckerCo_Windows BruckerCo.py
+        pyinstaller --onefile BruckerCo.py
     - name: Archive build artifacts
       uses: actions/upload-artifact@v2
       with:
