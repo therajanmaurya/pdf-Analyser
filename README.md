@@ -8,6 +8,10 @@ This project is a PDF Analyzer tool that extracts tables from PDF files and save
 - pdfplumber
 - pandas
 - tkinter
+- tesseract (
+- Download: https://github.com/UB-Mannheim/tesseract/wiki
+- Add to windows path: C:\Program Files\Tesseract-OCR -  Check It is present and installed on right place
+  )
 
 ## Installation
 

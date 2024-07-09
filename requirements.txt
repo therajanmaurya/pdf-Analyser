@@ -5,6 +5,7 @@ PyPDF2~=3.0.1
 opencv-python~=4.10.0.84
 PyMuPDF~=1.24.7
 pytesseract~=0.3.10
+tesseract
 
 Pillow==10.0.1
 pyinstaller~=6.8.0
