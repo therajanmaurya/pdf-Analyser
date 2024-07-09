@@ -32,7 +32,7 @@ jobs:
 
     - name: Build executable for Windows
       run: |
-        pyinstaller --onefile --name BruckerCo_Windows BruckerCo.py
+        pyinstaller BruckerCo.spec
 
     - name: Archive build artifacts
       uses: actions/upload-artifact@v2
