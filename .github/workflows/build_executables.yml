@@ -44,4 +44,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: setup-exe
-        path: dist/BruckerCo.py # Replace with your main script
+        path: dist/BruckerCo # Replace with your main script
