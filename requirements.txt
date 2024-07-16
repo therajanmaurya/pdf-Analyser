@@ -16,3 +16,4 @@ configparser~=7.0.0
 attrs~=23.2.0
 cryptography~=42.0.8
 filelock~=3.15.4
+easyocr
