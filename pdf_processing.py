@@ -152,6 +152,7 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
         r'M\d{3}',
         r'M.\.\d{2}',
         r'M.*',
+        r'M',
         r'M[a-zA-Z]\d+\.\d+',
         r'M\d{1,2}-\d{2}',
         r'\bM\S*'
@@ -175,7 +176,7 @@ def extract_most_bold_text(ocr_result):
     max_boldness = -1
     for i in range(len(ocr_result['text'])):
         text = ocr_result['text'][i]
-        if text.startswith('M') and re.match(r'^M.*', text):
+        if ('M' in text) and re.search(r'M', text):
             boldness = ocr_result['font'][i] if 'font' in ocr_result else 0  # Assuming font weight indicates boldness
             if boldness > max_boldness:
                 bold_text = text
