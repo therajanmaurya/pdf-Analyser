@@ -4,25 +4,17 @@ block_cipher = None
 
 a = Analysis(
     ['BruckerCo.py'],
-    pathex=['.'],
+    pathex=['/mnt/data/'],
     binaries=[],
-    datas=[],
-    hiddenimports=[
-        'pdfplumber',
-        'pandas',
-        'tkinter',
-        'PyQt5',
-        'setuptools',
-        'camelot',
-        'PyPDF2',
-        'cv2',
-        'fitz',
-        'fitz.frontend',  # Adding fitz.frontend to hidden imports
-        'pytesseract',
-        'openai',
-        'Pillow',
-        'opencv_python_headless',
+    datas=[
+        ('pdf_extraction.py', '.'),
+        ('pdf_processing_image.py', '.'),
+        ('pdf_processing_text.py', '.'),
+        ('pdf_processing.py', '.'),
+        ('pdf_processor.py', '.'),
+        ('pdf_saving.py', '.')
     ],
+    hiddenimports=['pandas', 'PyQt5', 'setuptools', 'PyPDF2', 'cv2', 'fitz', 'pytesseract', 'PIL', 'numpy', 'configparser', 'attrs', 'cryptography', 'filelock', 'easyocr'],
     hookspath=[],
     runtime_hooks=[],
     excludes=[],
@@ -30,7 +22,6 @@ a = Analysis(
     win_private_assemblies=False,
     cipher=block_cipher,
 )
-
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
@@ -56,5 +47,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='BruckerCo',
+    name='BruckerCo'
 )

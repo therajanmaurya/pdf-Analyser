@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import re
 import cv2
-import easyocr
+import easyocr as easyocr
 import pymupdf
 from PyPDF2 import PdfWriter, PdfReader
 from PIL import Image
