@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication
+    QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication, QScrollArea, QSizePolicy
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 import logging
@@ -41,9 +41,13 @@ class PDFProcessor(QWidget):
         self.instruction_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.instruction_label)
 
-        # Container for file list and progress bars
-        self.file_list_container = QVBoxLayout()
-        self.layout.addLayout(self.file_list_container)
+        # Scroll area for file list and progress bars
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area_widget = QWidget()
+        self.scroll_area.setWidget(self.scroll_area_widget)
+        self.file_list_container = QVBoxLayout(self.scroll_area_widget)
+        self.layout.addWidget(self.scroll_area)
 
         # Buttons layout
         self.buttons_layout = QHBoxLayout()
