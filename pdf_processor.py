@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication, QScrollArea, QSizePolicy
 )
+from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 import logging
 import os
@@ -17,13 +18,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class PDFProcessor(QWidget):
     def __init__(self):
         super().__init__()
-        self.initUI()
         self.selected_files = []
         self.extracted_tables = {}
         self.filtered_files = []  # Store paths to filtered PDFs
         self.progress_bars = []
+        self.initUI()
 
     def initUI(self):
+        # Set the window title and icon
         self.setWindowTitle("PDF Processor")
 
         # Set the window to 75% of the screen size
@@ -37,9 +39,16 @@ class PDFProcessor(QWidget):
         self.layout = QVBoxLayout()
 
         # Instruction text widget
-        self.instruction_label = QLabel("Click On Select File to process the PDF")
+        self.instruction_label = QLabel()
         self.instruction_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.instruction_label)
+
+        # Set an image when there are no files
+        self.icon_image = QLabel()
+        self.icon_image.setAlignment(Qt.AlignCenter)
+        pixmap = QPixmap('brucker_logo.png')  # Set the path to your image file
+        self.icon_image.setPixmap(pixmap)
+        self.layout.addWidget(self.icon_image)
 
         # Scroll area for file list and progress bars
         self.scroll_area = QScrollArea()
@@ -80,6 +89,9 @@ class PDFProcessor(QWidget):
 
         self.setLayout(self.layout)
 
+        # Update the visibility of the instruction label
+        self.update_instruction_visibility()
+
     def select_files(self):
         options = QFileDialog.Options()
         files, _ = QFileDialog.getOpenFileNames(self, "Select PDF Files", "", "PDF Files (*.pdf);;All Files (*)",
@@ -87,9 +99,9 @@ class PDFProcessor(QWidget):
         if files:
             self.selected_files.extend(files)
             self.update_file_list_container()
-            self.instruction_label.setText("Work in progress")
             logging.info(f"Selected files: {self.selected_files}")
         self.extract_button.setEnabled(bool(self.selected_files))
+        self.update_instruction_visibility()
 
     def reset_selection(self):
         self.selected_files = []
@@ -98,8 +110,8 @@ class PDFProcessor(QWidget):
         self.progress_bars = []
         self.update_file_list_container()
         self.extract_button.setEnabled(False)
-        self.instruction_label.setText("Click On Select File to process the PDF")
         logging.info("Selection reset")
+        self.update_instruction_visibility()
 
     def save_all_pdfs(self):
         save_all_pdfs(self.selected_files)
@@ -162,6 +174,13 @@ class PDFProcessor(QWidget):
             container_widget.setLayout(file_layout)
             container_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
             self.file_list_container.addWidget(container_widget)
+
+    def update_instruction_visibility(self):
+        if not self.selected_files:
+            self.instruction_label.setText("Click On Select File to process the PDF")
+            self.instruction_label.setVisible(True)
+        else:
+            self.instruction_label.setVisible(False)
 
     def extract_pdf(self, file, index):
         self.thread = QThread()
