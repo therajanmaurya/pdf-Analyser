@@ -45,8 +45,10 @@ class PDFProcessor(QWidget):
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area_widget = QWidget()
-        self.scroll_area.setWidget(self.scroll_area_widget)
         self.file_list_container = QVBoxLayout(self.scroll_area_widget)
+        self.file_list_container.setAlignment(Qt.AlignTop)  # Align the content to the top
+        self.scroll_area_widget.setLayout(self.file_list_container)
+        self.scroll_area.setWidget(self.scroll_area_widget)
         self.layout.addWidget(self.scroll_area)
 
         # Buttons layout
@@ -123,7 +125,9 @@ class PDFProcessor(QWidget):
 
         self.progress_bars = []
         for index, file in enumerate(self.selected_files):
-            file_layout = QHBoxLayout()
+            file_layout = QVBoxLayout()
+            file_layout.setContentsMargins(0, 0, 0, 0)  # Remove padding
+            file_layout.setSpacing(0)  # Remove spacing
 
             # Create alias for the file
             alias = os.path.basename(file)
@@ -133,32 +137,30 @@ class PDFProcessor(QWidget):
             file_label.setToolTip(file)  # Show full path on hover
             file_layout.addWidget(file_label)
 
+            # Layout for progress bar and buttons
+            progress_button_layout = QHBoxLayout()
+            progress_button_layout.setSpacing(0)  # Remove spacing between widgets
+            progress_button_layout.setContentsMargins(0, 0, 0, 0)  # Remove padding
+
             progress_bar = QProgressBar()
             progress_bar.setValue(0)
-            file_layout.addWidget(progress_bar)
+            progress_button_layout.addWidget(progress_bar)
             self.progress_bars.append(progress_bar)
-
-            # Buttons for extracting, previewing, and saving extracted tables
-            buttons_layout = QHBoxLayout()
-            buttons_layout.setSpacing(0)  # Remove spacing between buttons and progress bar
-            buttons_layout.setContentsMargins(0, 0, 0, 0)  # Remove padding
 
             extract_button = QPushButton('Extract')
             extract_button.clicked.connect(lambda checked, f=file, i=index: self.extract_pdf(f, i))
-            buttons_layout.addWidget(extract_button)
+            progress_button_layout.addWidget(extract_button)
 
-            # Adding a placeholder for the Open button
             open_button = QPushButton('Open')
             open_button.setEnabled(False)
             open_button.clicked.connect(lambda checked, i=index: self.open_pdf(i))
-            buttons_layout.addWidget(open_button)
+            progress_button_layout.addWidget(open_button)
 
-            buttons_widget = QWidget()
-            buttons_widget.setLayout(buttons_layout)
-            file_layout.addWidget(buttons_widget)
+            file_layout.addLayout(progress_button_layout)
 
             container_widget = QWidget()
             container_widget.setLayout(file_layout)
+            container_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
             self.file_list_container.addWidget(container_widget)
 
     def extract_pdf(self, file, index):
@@ -183,9 +185,12 @@ class PDFProcessor(QWidget):
     def enable_open_button(self, index):
         # This function enables the 'Open' button after extraction
         container_widget = self.file_list_container.itemAt(index).widget()
-        buttons_widget = container_widget.layout().itemAt(2).widget()
-        open_button = buttons_widget.layout().itemAt(1).widget()  # Assuming 'Open' is the second button
-        open_button.setEnabled(True)
+        if container_widget:
+            progress_button_layout = container_widget.layout().itemAt(1)
+            if progress_button_layout:
+                open_button = progress_button_layout.itemAt(2).widget()  # Assuming 'Open' is the third widget in the layout
+                if open_button:
+                    open_button.setEnabled(True)
 
     def open_pdf(self, index):
         try:
