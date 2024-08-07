@@ -38,11 +38,6 @@ class PDFProcessor(QWidget):
         # Main layout
         self.layout = QVBoxLayout()
 
-        # Instruction text widget
-        self.instruction_label = QLabel()
-        self.instruction_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.instruction_label)
-
         # Set an image when there are no files
         self.icon_image = QLabel()
         self.icon_image.setAlignment(Qt.AlignCenter)
@@ -89,8 +84,6 @@ class PDFProcessor(QWidget):
 
         self.setLayout(self.layout)
 
-        # Update the visibility of the instruction label
-        self.update_instruction_visibility()
 
     def select_files(self):
         options = QFileDialog.Options()
@@ -101,7 +94,6 @@ class PDFProcessor(QWidget):
             self.update_file_list_container()
             logging.info(f"Selected files: {self.selected_files}")
         self.extract_button.setEnabled(bool(self.selected_files))
-        self.update_instruction_visibility()
 
     def reset_selection(self):
         self.selected_files = []
@@ -111,7 +103,6 @@ class PDFProcessor(QWidget):
         self.update_file_list_container()
         self.extract_button.setEnabled(False)
         logging.info("Selection reset")
-        self.update_instruction_visibility()
 
     def save_all_pdfs(self):
         save_all_pdfs(self.selected_files)
@@ -174,13 +165,6 @@ class PDFProcessor(QWidget):
             container_widget.setLayout(file_layout)
             container_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
             self.file_list_container.addWidget(container_widget)
-
-    def update_instruction_visibility(self):
-        if not self.selected_files:
-            self.instruction_label.setText("Click On Select File to process the PDF")
-            self.instruction_label.setVisible(True)
-        else:
-            self.instruction_label.setVisible(False)
 
     def extract_pdf(self, file, index):
         self.thread = QThread()
