@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication, QScrollArea, QSizePolicy
+    QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication, QScrollArea, QSizePolicy, QRadioButton, QButtonGroup
 )
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
@@ -13,7 +13,6 @@ from PyPDF2 import PdfReader  # Correct import for PdfReader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 
 class PDFProcessor(QWidget):
     def __init__(self):
@@ -38,12 +37,35 @@ class PDFProcessor(QWidget):
         # Main layout
         self.layout = QVBoxLayout()
 
+        # Header layout
+        header_layout = QHBoxLayout()
+
+        # Radio buttons for "Plans" and "Specifications"
+        self.radio_group = QButtonGroup(self)
+        self.plans_radio = QRadioButton("Plans")
+        self.specifications_radio = QRadioButton("Specifications")
+        self.radio_group.addButton(self.plans_radio)
+        self.radio_group.addButton(self.specifications_radio)
+        self.plans_radio.setChecked(True)  # Default to "Plans"
+
+        # Layout for radio buttons
+        radio_layout = QHBoxLayout()
+        radio_layout.addWidget(self.plans_radio)
+        radio_layout.addWidget(self.specifications_radio)
+        radio_layout.addStretch()
+
+        # Add radio layout to the header layout
+        header_layout.addLayout(radio_layout)
+
         # Set an image when there are no files
         self.icon_image = QLabel()
         self.icon_image.setAlignment(Qt.AlignCenter)
         pixmap = QPixmap('brucker_logo.png')  # Set the path to your image file
         self.icon_image.setPixmap(pixmap)
-        self.layout.addWidget(self.icon_image)
+        header_layout.addWidget(self.icon_image)
+        header_layout.addStretch()
+
+        self.layout.addLayout(header_layout)
 
         # Scroll area for file list and progress bars
         self.scroll_area = QScrollArea()
@@ -83,7 +105,6 @@ class PDFProcessor(QWidget):
         self.layout.addLayout(self.buttons_layout)
 
         self.setLayout(self.layout)
-
 
     def select_files(self):
         options = QFileDialog.Options()
@@ -207,7 +228,6 @@ class PDFProcessor(QWidget):
         except Exception as e:
             logging.error(f"Error opening PDF: {e}")
 
-
 class ExtractWorker(QObject):
     progress = pyqtSignal(int, int)
     finished = pyqtSignal()
@@ -243,7 +263,6 @@ class ExtractWorker(QObject):
             if len(pdf_reader.pages) > 0:
                 self.enable_open_button.emit(index)  # Emit the signal to enable the Open button
         logging.info(f"Finished extracting file: {file}")
-
 
 if __name__ == "__main__":
     import sys
