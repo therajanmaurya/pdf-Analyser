@@ -131,6 +131,7 @@ class PDFProcessor(QWidget):
         self.worker.progress.connect(self.update_progress)
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
+        self.worker.enable_open_button.connect(self.enable_open_button)  # Connect the signal to the slot
         self.thread.finished.connect(self.thread.deleteLater)
 
         self.thread.started.connect(self.worker.run)
@@ -274,11 +275,9 @@ class ExtractWorker(QObject):
         filtered_pdf = create_filtered_pdf(file, self.filter_type, progress_callback)
         self.filtered_files.insert(index, filtered_pdf)  # Store the filtered PDF path
 
-        # Check if the filtered PDF has at least one page
-        with open(filtered_pdf, 'rb') as f:
-            pdf_reader = PdfReader(f)
-            if len(pdf_reader.pages) > 0:
-                self.enable_open_button.emit(index)  # Emit the signal to enable the Open button
+        # Emit the signal to enable the Open button once the file is filtered
+        self.enable_open_button.emit(index)
+
         logging.info(f"Finished extracting file: {file}")
 
 
