@@ -7,7 +7,6 @@ import easyocr as easyocr
 import pymupdf
 from PyPDF2 import PdfWriter, PdfReader
 from PIL import Image
-from pdf_processing_image import process_image_based_page
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -36,7 +35,7 @@ for folder in [OUTPUT_FOLDER, PROCESSING_PDFS_FOLDER, CROPPED_IMAGES_FOLDER]:
         os.makedirs(folder)
 
 
-def create_filtered_pdf(pdf_file, filter_type):
+def create_filtered_pdf(pdf_file, filter_type, progress_callback=None):
     logging.info(f"Starting to create filtered PDF for file: {pdf_file} with filter type: {filter_type}")
 
     reader = PdfReader(pdf_file)
@@ -51,14 +50,20 @@ def create_filtered_pdf(pdf_file, filter_type):
         os.makedirs(pdf_cropped_images_folder)
 
     document = pymupdf.open(pdf_file)
+    total_pages = len(reader.pages)
 
-    for page_num in range(len(reader.pages)):
+    for page_num in range(total_pages):
         fitz_page = document.load_page(page_num)
         if image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folder):
             writer.add_page(reader.pages[page_num])
             logging.info(f"Page {page_num} added to filtered PDF.")
         else:
             logging.info(f"Page {page_num} does not match criteria and will not be added.")
+
+        if progress_callback:
+            progress = int((page_num + 1) / total_pages * 100)
+            progress_callback(progress)
+            logging.info(f"Progress: {progress}%")
 
     with open(new_pdf_path, 'wb') as out_pdf:
         writer.write(out_pdf)
@@ -116,76 +121,19 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
     return match_preprocessed_black_easyocr
 
 
-def extract_most_bold_text(ocr_result):
-    bold_text = ""
-    max_boldness = -1
-    for i in range(len(ocr_result['text'])):
-        text = ocr_result['text'][i]
-        if ('M' in text) and re.search(r'M', text):
-            boldness = ocr_result['font'][i] if 'font' in ocr_result else 0  # Assuming font weight indicates boldness
-            if boldness > max_boldness:
-                bold_text = text
-                max_boldness = boldness
-    return bold_text
-
-
-def process_pdf_file(pdf_file, output_file_path, progress_callback=None):
-    logging.info(f"Starting to process PDF file: {pdf_file}")
-    document = pymupdf.open(pdf_file)
-    total_pages = len(document)
-    logging.info(f"Total pages to process: {total_pages}")
-    all_tables = []
-    table_titles = []
-
-    for page_num in range(total_pages):
-
-        logging.info(f"Processing image-based page {page_num}.")
-        tables, titles = process_image_based_page(pdf_file, page_num)
-
-        all_tables.extend(tables)
-        table_titles.extend(titles)
-
-        # Emit progress update if a callback is provided
-        if progress_callback:
-            progress = int((page_num + 1) / total_pages * 100)
-            progress_callback(progress)
-            logging.info(f"Progress: {progress}%")
-
-    save_all_tables_to_csv(all_tables, table_titles, output_file_path)
-    logging.info(f"PDF processing complete. Tables saved to {output_file_path}")
-    return f"Tables saved to {output_file_path}"
-
-
-def save_all_tables_to_csv(tables, titles, output_file_path):
-    logging.info("Saving all tables to CSV.")
-    if not tables:
-        logging.info("No tables found to save.")
-        return
-
-    with open(output_file_path, 'w', newline='') as f:
-        for title, table in zip(titles, tables):
-            f.write(f"{title}\n")
-            table.to_csv(f, index=False)
-            f.write("\n" + "-" * 50 + "\n")  # Add a dotted line between tables
-
-    logging.info(f"All tables saved to {output_file_path}")
-
-
-def extract_individual_pdf(pdf_file, index, extracted_tables, file_list_container, filter_type, progress_callback=None):
+def extract_individual_pdf(pdf_file, filter_type, progress_callback=None):
     logging.info(f"Extracting individual PDF: {pdf_file} with filter type: {filter_type}")
     base_file_name = os.path.basename(pdf_file).replace('.pdf', '')
-    output_file_path = os.path.join(OUTPUT_FOLDER, f"{base_file_name}_tables.csv")
+    output_file_path = os.path.join(OUTPUT_FOLDER, f"{base_file_name}_filtered.pdf")
     logging.info(f"Output will be saved to: {output_file_path}")
 
-    filtered_pdf = create_filtered_pdf(pdf_file, filter_type)
-    message = process_pdf_file(filtered_pdf, output_file_path, progress_callback)
-    extracted_tables[pdf_file] = message
-    logging.info(f"Extraction complete for {pdf_file}.")
+    filtered_pdf = create_filtered_pdf(pdf_file, filter_type, progress_callback)
+    logging.info(f"Extraction complete for {pdf_file}. Filtered PDF saved to {output_file_path}")
 
 
-def process_all_pdfs(selected_files, extracted_tables, file_list_container, filter_type, progress_callback=None):
+def process_all_pdfs(selected_files, filter_type, progress_callback=None):
     logging.info(f"Starting to process all selected PDFs with filter type: {filter_type}")
     for index, pdf_file in enumerate(selected_files):
         logging.info(f"Processing file {index + 1}/{len(selected_files)}: {pdf_file}")
-        extract_individual_pdf(pdf_file, index, extracted_tables, file_list_container, filter_type, progress_callback)
+        extract_individual_pdf(pdf_file, filter_type, progress_callback)
     logging.info("All selected PDFs processed.")
