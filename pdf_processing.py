@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import re
 import cv2
-import easyocr as easyocr
+import easyocr
 import pymupdf
 from PyPDF2 import PdfWriter, PdfReader
 from PIL import Image
@@ -54,7 +54,7 @@ def create_filtered_pdf(pdf_file, filter_type, progress_callback=None):
 
     for page_num in range(total_pages):
         fitz_page = document.load_page(page_num)
-        if image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folder):
+        if image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folder, filter_type):
             writer.add_page(reader.pages[page_num])
             logging.info(f"Page {page_num} added to filtered PDF.")
         else:
@@ -84,15 +84,22 @@ def preprocess_image(image):
     return erode
 
 
-def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folder):
-    logging.info("Checking for image pattern in the bottom-right corner of the page.")
+def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folder, filter_type):
+    logging.info("Checking for image pattern in the page.")
 
-    # Define the region of interest (bottom-right 250x150 pixels)
-    width, height = fitz_page.rect.width, fitz_page.rect.height
-    box = pymupdf.Rect(width - 280, height - 150, width, height)
+    if filter_type == "Plans":
+        # Define the region of interest (bottom-right 250x150 pixels)
+        width, height = fitz_page.rect.width, fitz_page.rect.height
+        box = pymupdf.Rect(width - 280, height - 150, width, height)
+    elif filter_type == "Specifications":
+        # Define the region of interest as double the region of width and height
+        width, height = fitz_page.rect.width, fitz_page.rect.height
+        box = pymupdf.Rect(width - 300, height - 200, width, height)
 
-    # Render the selected region to an image
-    pix = fitz_page.get_pixmap(clip=box)
+    # Render the selected region to an image at higher resolution
+    zoom = 2  # Adjust zoom to increase resolution
+    mat = pymupdf.Matrix(zoom, zoom)
+    pix = fitz_page.get_pixmap(matrix=mat, clip=box)
     image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
     # Save the cropped image for debugging
@@ -115,10 +122,15 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
     # Extract text from EasyOCR results
     text_preprocessed_black_easyocr = ' '.join(ocr_result_preprocessed_black_easyocr)
     logging.info(f"Extracted text (preprocessed black) with EasyOCR: {text_preprocessed_black_easyocr}")
-    match_preprocessed_black_easyocr = any(text.startswith('M') for text in ocr_result_preprocessed_black_easyocr)
-    logging.info(f"OCR pattern found (preprocessed black) with EasyOCR: {match_preprocessed_black_easyocr}")
 
-    return match_preprocessed_black_easyocr
+    if filter_type == "Plans":
+        match = any(text.startswith('M') for text in ocr_result_preprocessed_black_easyocr)
+    elif filter_type == "Specifications":
+        match = any(re.search(r'23 \d{2} \d{2}', text, re.IGNORECASE) for text in ocr_result_preprocessed_black_easyocr)
+
+    logging.info(f"OCR pattern found with EasyOCR: {match}")
+
+    return match
 
 
 def extract_individual_pdf(pdf_file, filter_type, progress_callback=None):
