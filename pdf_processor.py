@@ -209,12 +209,20 @@ class PDFProcessor(QWidget):
 
             file_layout.addLayout(progress_info_layout)
 
-            # Add a divider line between list items
+            # Add a divider line between list items with padding
             if index < len(self.selected_files) - 1:
+                divider_container = QVBoxLayout()
+                divider_container.setContentsMargins(0, 10, 0, 10)  # Add top and bottom padding
                 divider = QFrame()
                 divider.setFrameShape(QFrame.HLine)
                 divider.setFrameShadow(QFrame.Sunken)
-                file_layout.addWidget(divider)
+                divider.setLineWidth(1)  # Set the line width to make it visible
+                divider.setStyleSheet("background-color: rgba(0, 0, 0, 0.2);")  # Set the divider color to 50% black
+                divider.setFixedHeight(1)  # Ensure the divider is thin
+                divider.setSizePolicy(QSizePolicy.Expanding,
+                                      QSizePolicy.Fixed)  # Ensure it stretches across the full width
+                divider_container.addWidget(divider)
+                file_layout.addLayout(divider_container)
 
             container_widget = QWidget()
             container_widget.setLayout(file_layout)
