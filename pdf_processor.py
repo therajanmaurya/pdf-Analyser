@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication,
-    QScrollArea, QSizePolicy, QRadioButton, QButtonGroup
+    QScrollArea, QSizePolicy, QRadioButton, QButtonGroup, QMessageBox
 )
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
@@ -221,6 +221,11 @@ class PDFProcessor(QWidget):
     def open_pdf(self, index):
         try:
             filtered_file = self.filtered_files[index]  # Get the filtered PDF path
+            with open(filtered_file, 'rb') as f:
+                pdf_reader = PdfReader(f)
+                if len(pdf_reader.pages) == 0:
+                    QMessageBox.information(self, "Found Nothing", "The filtered PDF is empty.")
+                    return
             if os.name == 'posix':
                 subprocess.call(['open', filtered_file])
             elif os.name == 'nt':
@@ -229,6 +234,7 @@ class PDFProcessor(QWidget):
                 subprocess.call(['open', filtered_file])
         except Exception as e:
             logging.error(f"Error opening PDF: {e}")
+            QMessageBox.critical(self, "Error", f"Error opening PDF: {e}")
 
     def save_radio_button_state(self):
         state = "Plans" if self.plans_radio.isChecked() else "Specifications"
