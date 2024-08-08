@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication, QScrollArea, QSizePolicy, QRadioButton, QButtonGroup
+    QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication,
+    QScrollArea, QSizePolicy, QRadioButton, QButtonGroup
 )
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
@@ -14,6 +15,7 @@ from PyPDF2 import PdfReader  # Correct import for PdfReader
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 class PDFProcessor(QWidget):
     def __init__(self):
         super().__init__()
@@ -22,6 +24,7 @@ class PDFProcessor(QWidget):
         self.filtered_files = []  # Store paths to filtered PDFs
         self.progress_bars = []
         self.initUI()
+        self.load_radio_button_state()  # Load the radio button state
 
     def initUI(self):
         # Set the window title and icon
@@ -47,6 +50,10 @@ class PDFProcessor(QWidget):
         self.radio_group.addButton(self.plans_radio)
         self.radio_group.addButton(self.specifications_radio)
         self.plans_radio.setChecked(True)  # Default to "Plans"
+
+        # Connect radio buttons to save state method
+        self.plans_radio.toggled.connect(self.save_radio_button_state)
+        self.specifications_radio.toggled.connect(self.save_radio_button_state)
 
         # Layout for radio buttons
         radio_layout = QHBoxLayout()
@@ -130,7 +137,8 @@ class PDFProcessor(QWidget):
 
     def extract_all_pdfs(self):
         self.thread = QThread()
-        self.worker = ExtractWorker(self.selected_files, self.extracted_tables, self.filtered_files, self.file_list_container)
+        self.worker = ExtractWorker(self.selected_files, self.extracted_tables, self.filtered_files,
+                                    self.file_list_container, self.get_current_filter_type())
         self.worker.moveToThread(self.thread)
         self.worker.progress.connect(self.update_progress)
         self.worker.finished.connect(self.thread.quit)
@@ -140,6 +148,9 @@ class PDFProcessor(QWidget):
         self.thread.started.connect(self.worker.run)
         self.thread.start()
         logging.info("Started extracting all PDFs")
+
+    def get_current_filter_type(self):
+        return "Plans" if self.plans_radio.isChecked() else "Specifications"
 
     def update_file_list_container(self):
         for i in reversed(range(self.file_list_container.count())):
@@ -189,7 +200,8 @@ class PDFProcessor(QWidget):
 
     def extract_pdf(self, file, index):
         self.thread = QThread()
-        self.worker = ExtractWorker([file], self.extracted_tables, self.filtered_files, self.file_list_container, index)
+        self.worker = ExtractWorker([file], self.extracted_tables, self.filtered_files, self.file_list_container,
+                                    self.get_current_filter_type(), index)
         self.worker.moveToThread(self.thread)
         self.worker.progress.connect(self.update_progress)
         self.worker.finished.connect(self.thread.quit)
@@ -212,7 +224,8 @@ class PDFProcessor(QWidget):
         if container_widget:
             progress_button_layout = container_widget.layout().itemAt(1)
             if progress_button_layout:
-                open_button = progress_button_layout.itemAt(2).widget()  # Assuming 'Open' is the third widget in the layout
+                open_button = progress_button_layout.itemAt(
+                    2).widget()  # Assuming 'Open' is the third widget in the layout
                 if open_button:
                     open_button.setEnabled(True)
 
@@ -228,18 +241,36 @@ class PDFProcessor(QWidget):
         except Exception as e:
             logging.error(f"Error opening PDF: {e}")
 
+    def save_radio_button_state(self):
+        state = "Plans" if self.plans_radio.isChecked() else "Specifications"
+        with open("radio_button_state.txt", "w") as file:
+            file.write(state)
+        logging.info(f"Radio button state saved: {state}")
+
+    def load_radio_button_state(self):
+        if os.path.exists("radio_button_state.txt"):
+            with open("radio_button_state.txt", "r") as file:
+                state = file.read().strip()
+            if state == "Plans":
+                self.plans_radio.setChecked(True)
+            else:
+                self.specifications_radio.setChecked(True)
+            logging.info(f"Radio button state loaded: {state}")
+
+
 class ExtractWorker(QObject):
     progress = pyqtSignal(int, int)
     finished = pyqtSignal()
     enable_open_button = pyqtSignal(int)  # Define a new signal
 
-    def __init__(self, files, extracted_tables, filtered_files, file_list_container, index=None):
+    def __init__(self, files, extracted_tables, filtered_files, file_list_container, filter_type, index=None):
         super().__init__()
         self.files = files
         self.extracted_tables = extracted_tables
         self.filtered_files = filtered_files  # Add filtered files list
         self.file_list_container = file_list_container
         self.index = index
+        self.filter_type = filter_type
 
     def run(self):
         if self.index is not None:
@@ -253,9 +284,10 @@ class ExtractWorker(QObject):
         def progress_callback(progress):
             self.progress.emit(index, progress)
 
-        filtered_pdf = create_filtered_pdf(file)
+        filtered_pdf = create_filtered_pdf(file, self.filter_type)
         self.filtered_files.insert(index, filtered_pdf)  # Store the filtered PDF path
-        extract_individual_pdf(filtered_pdf, index, self.extracted_tables, self.file_list_container, progress_callback)
+        extract_individual_pdf(filtered_pdf, index, self.extracted_tables, self.file_list_container, self.filter_type,
+                               progress_callback)
 
         # Check if the filtered PDF has at least one page
         with open(filtered_pdf, 'rb') as f:
@@ -263,6 +295,7 @@ class ExtractWorker(QObject):
             if len(pdf_reader.pages) > 0:
                 self.enable_open_button.emit(index)  # Emit the signal to enable the Open button
         logging.info(f"Finished extracting file: {file}")
+
 
 if __name__ == "__main__":
     import sys

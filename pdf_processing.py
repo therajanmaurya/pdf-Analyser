@@ -36,8 +36,8 @@ for folder in [OUTPUT_FOLDER, PROCESSING_PDFS_FOLDER, CROPPED_IMAGES_FOLDER]:
         os.makedirs(folder)
 
 
-def create_filtered_pdf(pdf_file):
-    logging.info(f"Starting to create filtered PDF for file: {pdf_file}")
+def create_filtered_pdf(pdf_file, filter_type):
+    logging.info(f"Starting to create filtered PDF for file: {pdf_file} with filter type: {filter_type}")
 
     reader = PdfReader(pdf_file)
     writer = PdfWriter()
@@ -66,26 +66,6 @@ def create_filtered_pdf(pdf_file):
 
     return new_pdf_path
 
-
-# def preprocess_image(image):
-#     # Convert to grayscale
-#     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-#     # Enhance contrast and sharpness
-#     gray = cv2.equalizeHist(gray)
-#     sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-#     gray = cv2.filter2D(gray, -1, sharpen_kernel)
-#     # Apply adaptive thresholding for black text on white background
-#     adaptive_thresh_black_text = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11,
-#                                                        2)
-#     # Invert for white text on black background
-#     adaptive_thresh_white_text = cv2.bitwise_not(adaptive_thresh_black_text)
-#     # Apply dilation and erosion to remove noise
-#     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-#     dilate_black = cv2.dilate(adaptive_thresh_black_text, kernel, iterations=1)
-#     erode_black = cv2.erode(dilate_black, kernel, iterations=1)
-#     dilate_white = cv2.dilate(adaptive_thresh_white_text, kernel, iterations=1)
-#     erode_white = cv2.erode(dilate_white, kernel, iterations=1)
-#     return erode_black, erode_white, adaptive_thresh_black_text, adaptive_thresh_white_text
 
 def preprocess_image(image):
     # Convert to grayscale
@@ -121,72 +101,18 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
 
     # Convert back to PIL images
     preprocessed_black_pil_image = Image.fromarray(preprocessed_black)
-   # preprocessed_white_pil_image = Image.fromarray(preprocessed_white)
-   # adaptive_thresh_black_pil_image = Image.fromarray(adaptive_thresh_black)
-   # adaptive_thresh_white_pil_image = Image.fromarray(adaptive_thresh_white)
 
     # Perform OCR with EasyOCR on all processed images
     ocr_result_preprocessed_black_easyocr = easyocr_reader.readtext(np.array(preprocessed_black_pil_image), detail=0)
- #   ocr_result_preprocessed_white_easyocr = easyocr_reader.readtext(np.array(preprocessed_white_pil_image), detail=0)
-  #  ocr_result_adaptive_black_easyocr = easyocr_reader.readtext(np.array(adaptive_thresh_black_pil_image), detail=0)
-   # ocr_result_adaptive_white_easyocr = easyocr_reader.readtext(np.array(adaptive_thresh_white_pil_image), detail=0)
 
     logging.debug(f"OCR result (preprocessed black) with EasyOCR: {ocr_result_preprocessed_black_easyocr}")
-  #  logging.debug(f"OCR result (preprocessed white) with EasyOCR: {ocr_result_preprocessed_white_easyocr}")
-  #  logging.debug(f"OCR result (adaptive black) with EasyOCR: {ocr_result_adaptive_black_easyocr}")
-   # logging.debug(f"OCR result (adaptive white) with EasyOCR: {ocr_result_adaptive_white_easyocr}")
 
     # Extract text from EasyOCR results
     text_preprocessed_black_easyocr = ' '.join(ocr_result_preprocessed_black_easyocr)
-  #  text_preprocessed_white_easyocr = ' '.join(ocr_result_preprocessed_white_easyocr)
-  #  text_adaptive_black_easyocr = ' '.join(ocr_result_adaptive_black_easyocr)
-   # text_adaptive_white_easyocr = ' '.join(ocr_result_adaptive_white_easyocr)
-
     logging.info(f"Extracted text (preprocessed black) with EasyOCR: {text_preprocessed_black_easyocr}")
- #   logging.info(f"Extracted text (preprocessed white) with EasyOCR: {text_preprocessed_white_easyocr}")
-  #  logging.info(f"Extracted text (adaptive black) with EasyOCR: {text_adaptive_black_easyocr}")
-   # logging.info(f"Extracted text (adaptive white) with EasyOCR: {text_adaptive_white_easyocr}")
-
-    # Check if the extracted text matches any of the specified regex patterns
-    patterns = [
-        r'M\d+\.\d+',
-        r'M-\d{3}',
-        r'M\d+\.\d{2}',
-        r'M\d+-\d{3}',
-        r'M-\d+\.\d+',
-        r'M\d{3}',
-        r'M.\.\d{2}',
-        r'M.*',
-        # r'M',
-        # r'M[a-zA-Z]\d+\.\d+',
-        r'M\d{1,2}-\d{2}',
-        r'\bM\S*'
-    ]
-
-    # Check for patterns in EasyOCR results
-    #match_preprocessed_black_easyocr = any(re.search(pattern, text_preprocessed_black_easyocr) for pattern in patterns)
-    #match_preprocessed_white_easyocr = any(re.search(pattern, text_preprocessed_white_easyocr) for pattern in patterns)
-    #match_adaptive_black_easyocr = any(re.search(pattern, text_adaptive_black_easyocr) for pattern in patterns)
-    #match_adaptive_white_easyocr = any(re.search(pattern, text_adaptive_white_easyocr) for pattern in patterns)
-
-
-    #match_preprocessed_black_easyocr = ocr_result_preprocessed_black_easyocr.startswith('M')
-    #match_preprocessed_white_easyocr = text_preprocessed_white_easyocr.startswith('M')
-    #match_adaptive_black_easyocr = text_adaptive_black_easyocr.startswith('M')
-    #match_adaptive_white_easyocr = text_adaptive_white_easyocr.startswith('M')
-
     match_preprocessed_black_easyocr = any(text.startswith('M') for text in ocr_result_preprocessed_black_easyocr)
-  #  match_preprocessed_white_easyocr = any(text.startswith('M') for text in ocr_result_preprocessed_white_easyocr)
-   # match_adaptive_black_easyocr = any(text.startswith('M') for text in ocr_result_adaptive_black_easyocr)
-    #match_adaptive_white_easyocr = any(text.startswith('M') for text in ocr_result_adaptive_white_easyocr)
-
     logging.info(f"OCR pattern found (preprocessed black) with EasyOCR: {match_preprocessed_black_easyocr}")
-  #  logging.info(f"OCR pattern found (preprocessed white) with EasyOCR: {match_preprocessed_white_easyocr}")
-   # logging.info(f"OCR pattern found (adaptive black) with EasyOCR: {match_adaptive_black_easyocr}")
-    #logging.info(f"OCR pattern found (adaptive white) with EasyOCR: {match_adaptive_white_easyocr}")
 
-    #return (
-           # match_preprocessed_black_easyocr or match_preprocessed_white_easyocr or match_adaptive_black_easyocr or match_adaptive_white_easyocr)
     return match_preprocessed_black_easyocr
 
 
@@ -245,21 +171,21 @@ def save_all_tables_to_csv(tables, titles, output_file_path):
     logging.info(f"All tables saved to {output_file_path}")
 
 
-def extract_individual_pdf(pdf_file, index, extracted_tables, file_list_container, progress_callback=None):
-    logging.info(f"Extracting individual PDF: {pdf_file}")
+def extract_individual_pdf(pdf_file, index, extracted_tables, file_list_container, filter_type, progress_callback=None):
+    logging.info(f"Extracting individual PDF: {pdf_file} with filter type: {filter_type}")
     base_file_name = os.path.basename(pdf_file).replace('.pdf', '')
     output_file_path = os.path.join(OUTPUT_FOLDER, f"{base_file_name}_tables.csv")
     logging.info(f"Output will be saved to: {output_file_path}")
 
-    filtered_pdf = create_filtered_pdf(pdf_file)
+    filtered_pdf = create_filtered_pdf(pdf_file, filter_type)
     message = process_pdf_file(filtered_pdf, output_file_path, progress_callback)
     extracted_tables[pdf_file] = message
     logging.info(f"Extraction complete for {pdf_file}.")
 
 
-def process_all_pdfs(selected_files, extracted_tables, file_list_container, progress_callback=None):
-    logging.info("Starting to process all selected PDFs.")
+def process_all_pdfs(selected_files, extracted_tables, file_list_container, filter_type, progress_callback=None):
+    logging.info(f"Starting to process all selected PDFs with filter type: {filter_type}")
     for index, pdf_file in enumerate(selected_files):
         logging.info(f"Processing file {index + 1}/{len(selected_files)}: {pdf_file}")
-        extract_individual_pdf(pdf_file, index, extracted_tables, file_list_container, progress_callback)
+        extract_individual_pdf(pdf_file, index, extracted_tables, file_list_container, filter_type, progress_callback)
     logging.info("All selected PDFs processed.")
