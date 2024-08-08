@@ -1,12 +1,13 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication,
-    QScrollArea, QSizePolicy, QRadioButton, QButtonGroup, QMessageBox
+    QScrollArea, QSizePolicy, QRadioButton, QButtonGroup, QMessageBox, QFrame
 )
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 import logging
 import os
 import subprocess
+import time  # Import time module
 from pdf_processing import create_filtered_pdf
 from PyPDF2 import PdfReader  # Correct import for PdfReader
 
@@ -20,6 +21,8 @@ class PDFProcessor(QWidget):
         self.selected_files = []
         self.filtered_files = []  # Store paths to filtered PDFs
         self.progress_bars = []
+        self.progress_labels = []  # Store progress labels (percentage and timer)
+        self.start_times = []  # Store start times for each file extraction
         self.initUI()
         self.load_radio_button_state()  # Load the radio button state
 
@@ -119,11 +122,14 @@ class PDFProcessor(QWidget):
         self.selected_files = []
         self.filtered_files = []  # Reset filtered files
         self.progress_bars = []
+        self.progress_labels = []  # Reset progress labels
+        self.start_times = []  # Reset start times
         self.update_file_list_container()
         self.extract_button.setEnabled(False)
         logging.info("Selection reset")
 
     def extract_all_pdfs(self):
+        self.start_times = [time.time()] * len(self.selected_files)  # Record start times
         self.thread = QThread()
         self.worker = ExtractWorker(self.selected_files, self.filtered_files, self.file_list_container,
                                     self.get_current_filter_type())
@@ -148,10 +154,12 @@ class PDFProcessor(QWidget):
                 widget_to_remove.setParent(None)
 
         self.progress_bars = []
+        self.progress_labels = []  # Add a list to store the labels
+
         for index, file in enumerate(self.selected_files):
             file_layout = QVBoxLayout()
             file_layout.setContentsMargins(0, 0, 0, 0)  # Remove padding
-            file_layout.setSpacing(0)  # Remove spacing
+            file_layout.setSpacing(5)  # Add slight spacing for clarity
 
             # Create alias for the file
             alias = os.path.basename(file)
@@ -161,9 +169,9 @@ class PDFProcessor(QWidget):
             file_label.setToolTip(file)  # Show full path on hover
             file_layout.addWidget(file_label)
 
-            # Layout for progress bar and buttons
+            # Layout for progress bar and buttons (Horizontal layout)
             progress_button_layout = QHBoxLayout()
-            progress_button_layout.setSpacing(0)  # Remove spacing between widgets
+            progress_button_layout.setSpacing(5)  # Small spacing between widgets
             progress_button_layout.setContentsMargins(0, 0, 0, 0)  # Remove padding
 
             progress_bar = QProgressBar()
@@ -182,12 +190,39 @@ class PDFProcessor(QWidget):
 
             file_layout.addLayout(progress_button_layout)
 
+            # Layout for progress percentage and timer (New horizontal layout)
+            progress_info_layout = QHBoxLayout()
+            progress_info_layout.setSpacing(5)  # Spacing between items
+
+            progress_percentage_label = QLabel("0%")  # Initial percentage label
+            progress_timer_label = QLabel("0s")  # Initial timer label
+            separator_label = QLabel("|")  # Separator between percentage and time
+
+            progress_info_layout.addWidget(progress_percentage_label)
+            progress_info_layout.addWidget(separator_label)
+            progress_info_layout.addWidget(progress_timer_label)
+
+            # Align labels to the left
+            progress_info_layout.addStretch()
+
+            self.progress_labels.append((progress_percentage_label, progress_timer_label))
+
+            file_layout.addLayout(progress_info_layout)
+
+            # Add a divider line between list items
+            if index < len(self.selected_files) - 1:
+                divider = QFrame()
+                divider.setFrameShape(QFrame.HLine)
+                divider.setFrameShadow(QFrame.Sunken)
+                file_layout.addWidget(divider)
+
             container_widget = QWidget()
             container_widget.setLayout(file_layout)
             container_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
             self.file_list_container.addWidget(container_widget)
 
     def extract_pdf(self, file, index):
+        self.start_times[index] = time.time()  # Record the start time for this file
         self.thread = QThread()
         self.worker = ExtractWorker([file], self.filtered_files, self.file_list_container,
                                     self.get_current_filter_type(), index)
@@ -205,6 +240,13 @@ class PDFProcessor(QWidget):
     def update_progress(self, index, progress):
         progress_bar = self.progress_bars[index]
         progress_bar.setValue(progress)
+
+        progress_percentage_label, progress_timer_label = self.progress_labels[index]
+        progress_percentage_label.setText(f"{progress}%")  # Update the percentage label
+
+        elapsed_time = int(time.time() - self.start_times[index])  # Calculate elapsed time
+        progress_timer_label.setText(f"{elapsed_time}s")  # Update the timer label
+
         logging.info(f"Progress for file {index}: {progress}%")
 
     def enable_open_button(self, index):
