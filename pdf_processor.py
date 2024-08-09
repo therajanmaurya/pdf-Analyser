@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QScrollArea, QSizePolicy, QRadioButton, QButtonGroup, QMessageBox, QFrame
 )
 from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject, QTimer
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 import logging
 import os
 import subprocess
@@ -129,7 +129,7 @@ class PDFProcessor(QWidget):
             new_files = [file for file in files if file not in self.selected_files]
             if new_files:
                 self.selected_files.extend(new_files)
-                self.update_file_list_container()
+                self.update_file_list_container(new_files)
                 logging.info(f"Selected files: {new_files}")
             else:
                 logging.info("No new files selected.")
@@ -160,11 +160,21 @@ class PDFProcessor(QWidget):
         logging.info("Selection reset")
 
     def extract_all_pdfs(self):
+        unprocessed_indices = [i for i, pb in enumerate(self.progress_bars) if pb.value() < 100]
+
+        if not unprocessed_indices:
+            logging.info("All files are already processed.")
+            self.toggle_buttons(True)
+            return
+
         self.toggle_buttons(False)  # Disable buttons
-        self.start_times = [time.time()] * len(self.selected_files)  # Record start times
+        self.start_times = [time.time()] * len(self.selected_files)  # Record start times for all files
+
         self.thread = QThread()
-        self.worker = ExtractWorker(self.selected_files, self.filtered_files, self.file_list_container,
-                                    self.get_current_filter_type())
+        self.worker = ExtractWorker(
+            self.selected_files, self.filtered_files, self.file_list_container,
+            self.get_current_filter_type(), unprocessed_indices
+        )
         self.worker.moveToThread(self.thread)
         self.worker.progress.connect(self.update_progress)
         self.worker.finished.connect(self.thread.quit)
@@ -178,21 +188,17 @@ class PDFProcessor(QWidget):
 
         self.thread.started.connect(self.worker.run)
         self.thread.start()
-        logging.info("Started extracting all PDFs")
+        logging.info("Started extracting unprocessed PDFs")
 
     def get_current_filter_type(self):
         return "Plans" if self.plans_radio.isChecked() else "Specifications"
 
-    def update_file_list_container(self):
-        for i in reversed(range(self.file_list_container.count())):
-            widget_to_remove = self.file_list_container.itemAt(i).widget()
-            if widget_to_remove is not None:
-                widget_to_remove.setParent(None)
+    def update_file_list_container(self, new_files=None):
+        if new_files is None:
+            new_files = self.selected_files
 
-        self.progress_bars = []
-        self.progress_labels = []  # Add a list to store the labels
-
-        for index, file in enumerate(self.selected_files):
+        for file in new_files:
+            index = self.selected_files.index(file)
             file_layout = QVBoxLayout()
             file_layout.setContentsMargins(0, 0, 0, 0)  # Remove padding
             file_layout.setSpacing(5)  # Add slight spacing for clarity
@@ -211,9 +217,14 @@ class PDFProcessor(QWidget):
             progress_button_layout.setContentsMargins(0, 0, 0, 0)  # Remove padding
 
             progress_bar = QProgressBar()
-            progress_bar.setValue(0)
+            if len(self.progress_bars) > index:
+                # Use existing progress if it exists
+                progress_bar.setValue(self.progress_bars[index].value())
+            else:
+                progress_bar.setValue(0)
+                self.progress_bars.append(progress_bar)
+
             progress_button_layout.addWidget(progress_bar)
-            self.progress_bars.append(progress_bar)
 
             open_button = QPushButton('Open')
             open_button.setEnabled(False)
@@ -226,7 +237,7 @@ class PDFProcessor(QWidget):
             progress_info_layout = QHBoxLayout()
             progress_info_layout.setSpacing(5)  # Spacing between items
 
-            progress_percentage_label = QLabel("0%")  # Initial percentage label
+            progress_percentage_label = QLabel(f"{progress_bar.value()}%")  # Set initial percentage label
             progress_timer_label = QLabel("0s")  # Initial timer label
             separator_label = QLabel("|")  # Separator between percentage and time
 
@@ -237,7 +248,10 @@ class PDFProcessor(QWidget):
             # Align labels to the left
             progress_info_layout.addStretch()
 
-            self.progress_labels.append((progress_percentage_label, progress_timer_label))
+            if len(self.progress_labels) > index:
+                self.progress_labels[index] = (progress_percentage_label, progress_timer_label)
+            else:
+                self.progress_labels.append((progress_percentage_label, progress_timer_label))
 
             file_layout.addLayout(progress_info_layout)
 
@@ -346,23 +360,20 @@ class ExtractWorker(QObject):
     finished = pyqtSignal()
     enable_open_button = pyqtSignal(int)  # Define a new signal
 
-    def __init__(self, files, filtered_files, file_list_container, filter_type, index=None):
+    def __init__(self, files, filtered_files, file_list_container, filter_type, unprocessed_indices):
         super().__init__()
         self.files = files
         self.filtered_files = filtered_files  # Add filtered files list
         self.file_list_container = file_list_container
-        self.index = index
         self.filter_type = filter_type
+        self.unprocessed_indices = unprocessed_indices  # Indices of files to process
         self._is_canceled = False
 
     def run(self):
-        if self.index is not None:
-            self.extract_single_file(self.files[0], self.index)
-        else:
-            for index, file in enumerate(self.files):
-                if self._is_canceled:
-                    break
-                self.extract_single_file(file, index)
+        for index in self.unprocessed_indices:
+            if self._is_canceled:
+                break
+            self.extract_single_file(self.files[index], index)
         self.finished.emit()
 
     def extract_single_file(self, file, index):
