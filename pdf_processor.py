@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication,
     QScrollArea, QSizePolicy, QRadioButton, QButtonGroup, QMessageBox, QFrame
 )
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QMovie, QPixmap
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 import logging
 import os
@@ -15,23 +15,35 @@ from PyPDF2 import PdfReader
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-class Overlay(QWidget):
+class CircularProgress(QWidget):
     def __init__(self, parent=None):
-        super(Overlay, self).__init__(parent)
-        self.setAttribute(Qt.WA_NoSystemBackground)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        super(CircularProgress, self).__init__(parent)
+        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setAttribute(Qt.WA_StyledBackground, True)
+
+        # Set the layout and label
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
         self.setStyleSheet("background-color: rgba(0, 0, 0, 128);")
-        self.progress_bar = QProgressBar(self)
-        self.progress_bar.setGeometry(0, 0, 200, 30)
-        self.progress_bar.setAlignment(Qt.AlignCenter)
-        self.progress_bar.setTextVisible(False)
-        self.progress_bar.setRange(0, 0)  # Infinite loop mode
+
+        # Center the circular progress indicator
+        self.label = QLabel(self)
+        self.label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.label)
+
+        # Load the spinning GIF (Replace with your own spinner.gif)
+        movie = QMovie("spinner.gif")
+        self.label.setMovie(movie)
+        movie.start()
+
         self.hide()
 
     def resizeEvent(self, event):
-        self.progress_bar.move((self.width() - self.progress_bar.width()) // 2,
-                               (self.height() - self.progress_bar.height()) // 2)
+        # Ensure the progress indicator stays centered
+        self.label.move((self.width() - self.label.width()) // 2,
+                        (self.height() - self.label.height()) // 2)
 
 
 class PDFProcessor(QWidget):
@@ -45,7 +57,7 @@ class PDFProcessor(QWidget):
         self.thread = None
         self.worker = None
         self.is_resetting = False  # Flag to indicate if a reset is in progress
-        self.overlay = Overlay(self)
+        self.circular_progress = CircularProgress(self)  # Initialize the CircularProgress overlay
         self.initUI()
         self.load_radio_button_state()  # Load the radio button state
 
@@ -159,7 +171,7 @@ class PDFProcessor(QWidget):
         if self.thread and self.thread.isRunning():
             # If a thread is running, cancel the worker and reset states
             self.is_resetting = True
-            self.show_overlay()
+            self.show_circular_progress()  # Show the circular progress overlay
             if self.worker:
                 self.worker.cancel()
             self.thread.finished.connect(self.reset_states)
@@ -186,7 +198,7 @@ class PDFProcessor(QWidget):
                 child.widget().deleteLater()
 
         self.toggle_buttons(True)  # Re-enable buttons after reset
-        self.hide_overlay()
+        self.hide_circular_progress()  # Hide the overlay when done
         logging.info("Selection reset")
 
     def reset_states(self):
@@ -204,7 +216,7 @@ class PDFProcessor(QWidget):
             progress_timer_label.setText("0s")
 
         self.toggle_buttons(True)  # Re-enable buttons
-        self.hide_overlay()
+        self.hide_circular_progress()  # Hide the overlay when done
         logging.info("States reset, ready for new extraction.")
 
     def extract_all_pdfs(self):
@@ -408,12 +420,12 @@ class PDFProcessor(QWidget):
                 self.specifications_radio.setChecked(True)
             logging.info(f"Radio button state loaded: {state}")
 
-    def show_overlay(self):
-        self.overlay.show()
-        self.overlay.resize(self.size())
+    def show_circular_progress(self):
+        self.circular_progress.resize(self.size())  # Make sure the overlay covers the entire window
+        self.circular_progress.show()
 
-    def hide_overlay(self):
-        self.overlay.hide()
+    def hide_circular_progress(self):
+        self.circular_progress.hide()
 
 
 class ExtractWorker(QObject):
