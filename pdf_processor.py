@@ -136,28 +136,38 @@ class PDFProcessor(QWidget):
         self.toggle_buttons(True)
 
     def reset_selection(self):
-        self.is_resetting = True
-        if self.thread and self.thread.isRunning():
-            self.worker.cancel()  # Signal the worker to cancel
-            self.thread.quit()
-            self.thread.finished.connect(self.complete_reset)
-        else:
+        if not self.thread or not self.thread.isRunning():
+            # No thread is running, so reset immediately
             self.complete_reset()
+        else:
+            # If a thread is running, mark the reset flag and cancel the worker
+            self.is_resetting = True
+            if self.worker:
+                self.worker.cancel()
+            self.thread.finished.connect(self.complete_reset)
 
     def complete_reset(self):
         self.thread = None
         self.worker = None
 
-        self.toggle_buttons(False)  # Disable buttons
-        self.selected_files = []
-        self.filtered_files = []  # Reset filtered files
-        self.progress_bars = []
-        self.progress_labels = []  # Reset progress labels
-        self.start_times = []  # Reset start times
-        self.update_file_list_container()
-        self.toggle_buttons(True)  # Re-enable buttons after reset
+        if not self.is_resetting:
+            self.toggle_buttons(False)  # Disable buttons
+            self.selected_files = []
+            self.filtered_files = []  # Reset filtered files
+            self.progress_bars = []
+            self.progress_labels = []  # Reset progress labels
+            self.start_times = []  # Reset start times
+
+            # Clear all widgets in the file list container
+            while self.file_list_container.count():
+                child = self.file_list_container.takeAt(0)
+                if child.widget():
+                    child.widget().deleteLater()
+
+            self.toggle_buttons(True)  # Re-enable buttons after reset
+            logging.info("Selection reset")
+
         self.is_resetting = False
-        logging.info("Selection reset")
 
     def extract_all_pdfs(self):
         unprocessed_indices = [i for i, pb in enumerate(self.progress_bars) if pb.value() < 100]
