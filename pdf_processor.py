@@ -169,7 +169,7 @@ class PDFProcessor(QWidget):
             file_label.setToolTip(file)  # Show full path on hover
             file_layout.addWidget(file_label)
 
-            # Layout for progress bar and buttons (Horizontal layout)
+            # Layout for progress bar and open button (Horizontal layout)
             progress_button_layout = QHBoxLayout()
             progress_button_layout.setSpacing(5)  # Small spacing between widgets
             progress_button_layout.setContentsMargins(0, 0, 0, 0)  # Remove padding
@@ -178,10 +178,6 @@ class PDFProcessor(QWidget):
             progress_bar.setValue(0)
             progress_button_layout.addWidget(progress_bar)
             self.progress_bars.append(progress_bar)
-
-            extract_button = QPushButton('Extract')
-            extract_button.clicked.connect(lambda checked, f=file, i=index: self.extract_pdf(f, i))
-            progress_button_layout.addWidget(extract_button)
 
             open_button = QPushButton('Open')
             open_button.setEnabled(False)
@@ -234,22 +230,6 @@ class PDFProcessor(QWidget):
             container_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
             self.file_list_container.addWidget(container_widget)
 
-    def extract_pdf(self, file, index):
-        self.start_times[index] = time.time()  # Record the start time for this file
-        self.thread = QThread()
-        self.worker = ExtractWorker([file], self.filtered_files, self.file_list_container,
-                                    self.get_current_filter_type(), index)
-        self.worker.moveToThread(self.thread)
-        self.worker.progress.connect(self.update_progress)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.worker.enable_open_button.connect(self.enable_open_button)  # Connect the signal to the slot
-        self.thread.finished.connect(self.thread.deleteLater)
-
-        self.thread.started.connect(self.worker.run)
-        self.thread.start()
-        logging.info(f"Started extracting PDF: {file}")
-
     def update_progress(self, index, progress):
         progress_bar = self.progress_bars[index]
         progress_bar.setValue(progress)
@@ -269,7 +249,7 @@ class PDFProcessor(QWidget):
             progress_button_layout = container_widget.layout().itemAt(1)
             if progress_button_layout:
                 open_button = progress_button_layout.itemAt(
-                    2).widget()  # Assuming 'Open' is the third widget in the layout
+                    1).widget()  # Assuming 'Open' is the second widget in the layout
                 if open_button:
                     open_button.setEnabled(True)
 
