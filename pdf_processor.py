@@ -7,9 +7,9 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 import logging
 import os
 import subprocess
-import time  # Import time module
+import time
 from pdf_processing import create_filtered_pdf
-from PyPDF2 import PdfReader  # Correct import for PdfReader
+from PyPDF2 import PdfReader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -109,8 +109,13 @@ class PDFProcessor(QWidget):
         self.setLayout(self.layout)
 
     def toggle_buttons(self, enable):
-        self.extract_button.setEnabled(enable)
         self.select_button.setEnabled(enable)
+
+        # Only enable the "Extract" button if there are unprocessed PDFs
+        if enable and any(pb.value() < 100 for pb in self.progress_bars):
+            self.extract_button.setEnabled(True)
+        else:
+            self.extract_button.setEnabled(False)
 
     def select_files(self):
         options = QFileDialog.Options()
@@ -120,7 +125,7 @@ class PDFProcessor(QWidget):
             self.selected_files.extend(files)
             self.update_file_list_container()
             logging.info(f"Selected files: {self.selected_files}")
-        self.extract_button.setEnabled(bool(self.selected_files))
+        self.toggle_buttons(True)
 
     def reset_selection(self):
         self.toggle_buttons(False)  # Disable buttons
@@ -250,6 +255,11 @@ class PDFProcessor(QWidget):
         progress_timer_label.setText(f"{elapsed_time}s")  # Update the timer label
 
         logging.info(f"Progress for file {index}: {progress}%")
+
+        # Check if all files have reached 100% progress
+        all_done = all(pb.value() == 100 for pb in self.progress_bars)
+        if all_done:
+            self.extract_button.setEnabled(False)
 
     def enable_open_button(self, index):
         # This function enables the 'Open' button after extraction
