@@ -93,7 +93,7 @@ class PDFProcessor(QWidget):
         self.buttons_layout.addWidget(self.select_button)
 
         # Reset button
-        self.reset_button = QPushButton('Reset', self)
+        self.reset_button = QPushButton('Reset/Cancel', self)
         self.reset_button.clicked.connect(self.reset_selection)
         self.buttons_layout.addWidget(self.reset_button)
 
@@ -108,6 +108,10 @@ class PDFProcessor(QWidget):
 
         self.setLayout(self.layout)
 
+    def toggle_buttons(self, enable):
+        self.extract_button.setEnabled(enable)
+        self.select_button.setEnabled(enable)
+
     def select_files(self):
         options = QFileDialog.Options()
         files, _ = QFileDialog.getOpenFileNames(self, "Select PDF Files", "", "PDF Files (*.pdf);;All Files (*)",
@@ -119,16 +123,18 @@ class PDFProcessor(QWidget):
         self.extract_button.setEnabled(bool(self.selected_files))
 
     def reset_selection(self):
+        self.toggle_buttons(False)  # Disable buttons
         self.selected_files = []
         self.filtered_files = []  # Reset filtered files
         self.progress_bars = []
         self.progress_labels = []  # Reset progress labels
         self.start_times = []  # Reset start times
         self.update_file_list_container()
-        self.extract_button.setEnabled(False)
+        self.toggle_buttons(True)  # Re-enable buttons after reset
         logging.info("Selection reset")
 
     def extract_all_pdfs(self):
+        self.toggle_buttons(False)  # Disable buttons
         self.start_times = [time.time()] * len(self.selected_files)  # Record start times
         self.thread = QThread()
         self.worker = ExtractWorker(self.selected_files, self.filtered_files, self.file_list_container,
@@ -138,6 +144,9 @@ class PDFProcessor(QWidget):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.worker.enable_open_button.connect(self.enable_open_button)  # Connect the signal to the slot
+
+        # Re-enable buttons after extraction is complete
+        self.worker.finished.connect(lambda: self.toggle_buttons(True))
         self.thread.finished.connect(self.thread.deleteLater)
 
         self.thread.started.connect(self.worker.run)
