@@ -209,20 +209,25 @@ class PDFProcessor(QWidget):
 
             file_layout.addLayout(progress_info_layout)
 
-            # Add a divider line between list items with padding
+            # Add a divider line between list items with no left or right padding
             if index < len(self.selected_files) - 1:
-                divider_container = QVBoxLayout()
-                divider_container.setContentsMargins(0, 10, 0, 10)  # Add top and bottom padding
                 divider = QFrame()
                 divider.setFrameShape(QFrame.HLine)
                 divider.setFrameShadow(QFrame.Sunken)
                 divider.setLineWidth(1)  # Set the line width to make it visible
-                divider.setStyleSheet("background-color: rgba(0, 0, 0, 0.2);")  # Set the divider color to 50% black
+                divider.setStyleSheet("background-color: rgba(0, 0, 0, 0.2);")  # Set the divider color to 20% black
                 divider.setFixedHeight(1)  # Ensure the divider is thin
-                divider.setSizePolicy(QSizePolicy.Expanding,
-                                      QSizePolicy.Fixed)  # Ensure it stretches across the full width
-                divider_container.addWidget(divider)
-                file_layout.addLayout(divider_container)
+
+                # Ensure the divider spans the entire width of the parent container
+                divider.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+                # Remove all margins from the layout containing the divider
+                divider_layout = QVBoxLayout()
+                divider_layout.setContentsMargins(0, 10, 0, 10)  # Only top and bottom padding
+                divider_layout.setSpacing(0)  # No extra spacing
+                divider_layout.addWidget(divider)
+
+                file_layout.addLayout(divider_layout)
 
             container_widget = QWidget()
             container_widget.setLayout(file_layout)
