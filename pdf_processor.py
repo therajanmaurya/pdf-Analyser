@@ -178,7 +178,9 @@ class PDFProcessor(QWidget):
             return
 
         self.toggle_buttons(False)  # Disable buttons
-        self.start_times = [time.time()] * len(self.selected_files)  # Record start times for all files
+
+        # Initialize start_times with None for each file
+        self.start_times = [None] * len(self.selected_files)
 
         self.thread = QThread()
         self.worker = ExtractWorker(
@@ -300,10 +302,14 @@ class PDFProcessor(QWidget):
         progress_bar = self.progress_bars[index]
         progress_bar.setValue(progress)
 
-        progress_percentage_label, progress_timer_label = self.progress_labels[index]
-        progress_percentage_label.setText(f"{progress}%")  # Update the percentage label
+        # Initialize start time when processing begins
+        if self.start_times[index] is None:
+            self.start_times[index] = time.time()
 
         elapsed_time = int(time.time() - self.start_times[index])  # Calculate elapsed time
+
+        progress_percentage_label, progress_timer_label = self.progress_labels[index]
+        progress_percentage_label.setText(f"{progress}%")  # Update the percentage label
         progress_timer_label.setText(f"{elapsed_time}s")  # Update the timer label
 
         logging.info(f"Progress for file {index}: {progress}%")
