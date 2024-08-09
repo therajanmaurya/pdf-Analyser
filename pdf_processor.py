@@ -125,9 +125,14 @@ class PDFProcessor(QWidget):
         files, _ = QFileDialog.getOpenFileNames(self, "Select PDF Files", "", "PDF Files (*.pdf);;All Files (*)",
                                                 options=options)
         if files:
-            self.selected_files.extend(files)
-            self.update_file_list_container()
-            logging.info(f"Selected files: {self.selected_files}")
+            # Filter out files that are already in the list
+            new_files = [file for file in files if file not in self.selected_files]
+            if new_files:
+                self.selected_files.extend(new_files)
+                self.update_file_list_container()
+                logging.info(f"Selected files: {new_files}")
+            else:
+                logging.info("No new files selected.")
         self.toggle_buttons(True)
 
     def reset_selection(self):
