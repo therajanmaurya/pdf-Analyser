@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QProgressBar, QDesktopWidget, QApplication,
-    QScrollArea, QSizePolicy, QRadioButton, QButtonGroup, QMessageBox, QFrame
+    QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QHBoxLayout, QScrollArea, QSizePolicy, QRadioButton,
+    QButtonGroup, QMessageBox, QFrame, QDesktopWidget, QApplication, QProgressBar
 )
 from PyQt5.QtGui import QMovie, QPixmap
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
@@ -22,6 +22,7 @@ class CircularProgress(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setWindowModality(Qt.ApplicationModal)  # Ensure the overlay blocks interactions
 
         # Set the layout and label
         layout = QVBoxLayout(self)
