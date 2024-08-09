@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QScrollArea, QSizePolicy, QRadioButton, QButtonGroup, QMessageBox, QFrame
 )
 from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject, QTimer
 import logging
 import os
 import subprocess
@@ -23,6 +23,9 @@ class PDFProcessor(QWidget):
         self.progress_bars = []
         self.progress_labels = []  # Store progress labels (percentage and timer)
         self.start_times = []  # Store start times for each file extraction
+        self.thread = None
+        self.worker = None
+        self.is_resetting = False  # Flag to indicate if a reset is in progress
         self.initUI()
         self.load_radio_button_state()  # Load the radio button state
 
@@ -128,6 +131,18 @@ class PDFProcessor(QWidget):
         self.toggle_buttons(True)
 
     def reset_selection(self):
+        self.is_resetting = True
+        if self.thread and self.thread.isRunning():
+            self.worker.cancel()  # Signal the worker to cancel
+            self.thread.quit()
+            self.thread.finished.connect(self.complete_reset)
+        else:
+            self.complete_reset()
+
+    def complete_reset(self):
+        self.thread = None
+        self.worker = None
+
         self.toggle_buttons(False)  # Disable buttons
         self.selected_files = []
         self.filtered_files = []  # Reset filtered files
@@ -136,6 +151,7 @@ class PDFProcessor(QWidget):
         self.start_times = []  # Reset start times
         self.update_file_list_container()
         self.toggle_buttons(True)  # Re-enable buttons after reset
+        self.is_resetting = False
         logging.info("Selection reset")
 
     def extract_all_pdfs(self):
@@ -152,7 +168,8 @@ class PDFProcessor(QWidget):
 
         # Re-enable buttons after extraction is complete
         self.worker.finished.connect(lambda: self.toggle_buttons(True))
-        self.thread.finished.connect(self.thread.deleteLater)
+        # Do not call complete_reset here, as we want to keep the list
+        self.thread.finished.connect(lambda: logging.info("Processing completed"))
 
         self.thread.started.connect(self.worker.run)
         self.thread.start()
@@ -245,6 +262,12 @@ class PDFProcessor(QWidget):
             self.file_list_container.addWidget(container_widget)
 
     def update_progress(self, index, progress):
+        if self.is_resetting:
+            return
+
+        if index >= len(self.progress_bars):
+            return  # Prevent IndexError if reset occurs during processing
+
         progress_bar = self.progress_bars[index]
         progress_bar.setValue(progress)
 
@@ -262,6 +285,9 @@ class PDFProcessor(QWidget):
             self.extract_button.setEnabled(False)
 
     def enable_open_button(self, index):
+        if index >= len(self.filtered_files):
+            return  # Prevent IndexError if reset occurs during processing
+
         # This function enables the 'Open' button after extraction
         container_widget = self.file_list_container.itemAt(index).widget()
         if container_widget:
@@ -273,6 +299,9 @@ class PDFProcessor(QWidget):
                     open_button.setEnabled(True)
 
     def open_pdf(self, index):
+        if index >= len(self.filtered_files):
+            return  # Prevent IndexError if reset occurs during processing
+
         try:
             filtered_file = self.filtered_files[index]  # Get the filtered PDF path
             with open(filtered_file, 'rb') as f:
@@ -319,18 +348,24 @@ class ExtractWorker(QObject):
         self.file_list_container = file_list_container
         self.index = index
         self.filter_type = filter_type
+        self._is_canceled = False
 
     def run(self):
         if self.index is not None:
             self.extract_single_file(self.files[0], self.index)
         else:
             for index, file in enumerate(self.files):
+                if self._is_canceled:
+                    break
                 self.extract_single_file(file, index)
         self.finished.emit()
 
     def extract_single_file(self, file, index):
         def progress_callback(progress):
             self.progress.emit(index, progress)
+
+        if self._is_canceled:
+            return
 
         filtered_pdf = create_filtered_pdf(file, self.filter_type, progress_callback)
         self.filtered_files.insert(index, filtered_pdf)  # Store the filtered PDF path
@@ -339,6 +374,10 @@ class ExtractWorker(QObject):
         self.enable_open_button.emit(index)
 
         logging.info(f"Finished extracting file: {file}")
+
+    def cancel(self):
+        logging.info("Cancelling extraction")
+        self._is_canceled = True
 
 
 if __name__ == "__main__":
