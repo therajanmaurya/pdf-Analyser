@@ -126,7 +126,7 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
     if filter_type == "Plans":
         match = any(text.startswith('M') for text in ocr_result_preprocessed_black_easyocr)
     elif filter_type == "Specifications":
-        match = any(re.search(r'23 \d{2} \d{2}', text, re.IGNORECASE) for text in ocr_result_preprocessed_black_easyocr)
+        match = any(text.startswith('23') for text in ocr_result_preprocessed_black_easyocr)
 
     logging.info(f"OCR pattern found with EasyOCR: {match}")
 
