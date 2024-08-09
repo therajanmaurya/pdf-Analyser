@@ -15,6 +15,25 @@ from PyPDF2 import PdfReader
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
+class Overlay(QWidget):
+    def __init__(self, parent=None):
+        super(Overlay, self).__init__(parent)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setStyleSheet("background-color: rgba(0, 0, 0, 128);")
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setGeometry(0, 0, 200, 30)
+        self.progress_bar.setAlignment(Qt.AlignCenter)
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setRange(0, 0)  # Infinite loop mode
+        self.hide()
+
+    def resizeEvent(self, event):
+        self.progress_bar.move((self.width() - self.progress_bar.width()) // 2,
+                               (self.height() - self.progress_bar.height()) // 2)
+
+
 class PDFProcessor(QWidget):
     def __init__(self):
         super().__init__()
@@ -26,6 +45,7 @@ class PDFProcessor(QWidget):
         self.thread = None
         self.worker = None
         self.is_resetting = False  # Flag to indicate if a reset is in progress
+        self.overlay = Overlay(self)
         self.initUI()
         self.load_radio_button_state()  # Load the radio button state
 
@@ -136,38 +156,56 @@ class PDFProcessor(QWidget):
         self.toggle_buttons(True)
 
     def reset_selection(self):
-        if not self.thread or not self.thread.isRunning():
-            # No thread is running, so reset immediately
-            self.complete_reset()
-        else:
-            # If a thread is running, mark the reset flag and cancel the worker
+        if self.thread and self.thread.isRunning():
+            # If a thread is running, cancel the worker and reset states
             self.is_resetting = True
+            self.show_overlay()
             if self.worker:
                 self.worker.cancel()
-            self.thread.finished.connect(self.complete_reset)
+            self.thread.finished.connect(self.reset_states)
+        else:
+            # No thread is running, so clear the list and reset states
+            self.complete_reset()
 
     def complete_reset(self):
         self.thread = None
         self.worker = None
-
-        if not self.is_resetting:
-            self.toggle_buttons(False)  # Disable buttons
-            self.selected_files = []
-            self.filtered_files = []  # Reset filtered files
-            self.progress_bars = []
-            self.progress_labels = []  # Reset progress labels
-            self.start_times = []  # Reset start times
-
-            # Clear all widgets in the file list container
-            while self.file_list_container.count():
-                child = self.file_list_container.takeAt(0)
-                if child.widget():
-                    child.widget().deleteLater()
-
-            self.toggle_buttons(True)  # Re-enable buttons after reset
-            logging.info("Selection reset")
-
         self.is_resetting = False
+
+        self.toggle_buttons(False)  # Disable buttons
+        self.selected_files = []
+        self.filtered_files = []  # Reset filtered files
+        self.progress_bars = []
+        self.progress_labels = []  # Reset progress labels
+        self.start_times = []  # Reset start times
+
+        # Clear all widgets in the file list container
+        while self.file_list_container.count():
+            child = self.file_list_container.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+        self.toggle_buttons(True)  # Re-enable buttons after reset
+        self.hide_overlay()
+        logging.info("Selection reset")
+
+    def reset_states(self):
+        self.thread = None
+        self.worker = None
+        self.is_resetting = False
+
+        # Reset progress bars and related states
+        for pb in self.progress_bars:
+            pb.setValue(0)
+        for index, _ in enumerate(self.start_times):
+            self.start_times[index] = None
+            progress_percentage_label, progress_timer_label = self.progress_labels[index]
+            progress_percentage_label.setText("0%")
+            progress_timer_label.setText("0s")
+
+        self.toggle_buttons(True)  # Re-enable buttons
+        self.hide_overlay()
+        logging.info("States reset, ready for new extraction.")
 
     def extract_all_pdfs(self):
         unprocessed_indices = [i for i, pb in enumerate(self.progress_bars) if pb.value() < 100]
@@ -369,6 +407,13 @@ class PDFProcessor(QWidget):
             else:
                 self.specifications_radio.setChecked(True)
             logging.info(f"Radio button state loaded: {state}")
+
+    def show_overlay(self):
+        self.overlay.show()
+        self.overlay.resize(self.size())
+
+    def hide_overlay(self):
+        self.overlay.hide()
 
 
 class ExtractWorker(QObject):
