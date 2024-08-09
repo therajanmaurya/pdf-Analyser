@@ -97,8 +97,8 @@ class PDFProcessor(QWidget):
         self.reset_button.clicked.connect(self.reset_selection)
         self.buttons_layout.addWidget(self.reset_button)
 
-        # Extract All button
-        self.extract_button = QPushButton('Extract All', self)
+        # Extract button
+        self.extract_button = QPushButton('Extract', self)
         self.extract_button.clicked.connect(self.extract_all_pdfs)
         self.extract_button.setEnabled(False)
         self.buttons_layout.addWidget(self.extract_button)
