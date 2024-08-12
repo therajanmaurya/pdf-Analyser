@@ -10,6 +10,7 @@ import subprocess
 import time
 from pdf_processing import create_filtered_pdf
 from PyPDF2 import PdfReader
+import resources_rc
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -103,7 +104,7 @@ class PDFProcessor(QWidget):
         # Set an image when there are no files
         self.icon_image = QLabel()
         self.icon_image.setAlignment(Qt.AlignCenter)
-        pixmap = QPixmap('brucker_logo.png')  # Set the path to your image file
+        pixmap = QPixmap(':/brucker_logo.png')  # Set the path to your image file
         self.icon_image.setPixmap(pixmap)
         header_layout.addWidget(self.icon_image)
         header_layout.addStretch()
