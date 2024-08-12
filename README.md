@@ -18,9 +18,19 @@ This project is a PDF Analyzer tool that extracts tables from PDF files and save
 1. Clone the repository.
 2. Install the required dependencies using:
 
+#### Create Python Environment 
+```sh
+python -m venv venv
+```
+#### Activate environment
+```sh
+venv\Scripts\activate
+```
+#### Install Library Requirements
 ```sh
 pip install -r requirements.txt
 ```
+
  
 ## Usage
 
@@ -58,7 +68,12 @@ cd path\to\your\project
 
 - Run PyInstaller:
 ```sh
-pyinstaller --onefile BruckerCo.py
+pyinstaller BruckerCo.spec
+```
+
+- Run Exe and save crash report
+```sh
+.\BruckerCo.exe > crash_log.txt 2>&1
 ```
 
 - Locate the executable:
@@ -95,9 +110,3 @@ pyinstaller --onefile --icon=myicon.ico --strip BruckerCo.py
 - Extracts tables from PDF files and saves them as CSV files.
 - Provides a simple UI for selecting multiple PDF files.
 - Displays a progress bar for each PDF file being processed.
-
-
-## Run Exe and save crash report
-`
-.\BruckerCo.exe > crash_log.txt 2>&1
-`
