@@ -163,23 +163,28 @@ def spec_image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_
 
     logging.debug(f"OCR result (preprocessed black) with EasyOCR: {ocr_result_preprocessed_black_easyocr}")
 
-    # Extract text from EasyOCR results
+    # Extract text from EasyOCR results and log it
     text_preprocessed_black_easyocr = ' '.join(ocr_result_preprocessed_black_easyocr)
     logging.info(f"Extracted text (preprocessed black) with EasyOCR: {text_preprocessed_black_easyocr}")
 
-    # Check for the pattern starting with '23' and determine if the number is smaller than 23
     match = False
     smaller = False
     for text in ocr_result_preprocessed_black_easyocr:
+        logging.info(f"Checking text: {text}")
+
+        # Determine if the text starts with "23"
         if text.startswith('23'):
             match = True
-            try:
-                # Take only the first two characters
-                number = int(text[:2])
-                smaller = number < 23
-            except ValueError:
-                smaller = False
-            break
+            logging.info("Match found: Text starts with '23'")
+
+        try:
+            # Take only the first two characters to check if it's smaller than 23
+            number = int(text[:2])
+            smaller = number < 23
+            logging.info(f"Extracted number: {number}, smaller: {smaller}")
+        except ValueError:
+            logging.error(f"Failed to convert {text[:2]} to int.")
+            smaller = False
 
     logging.info(f"OCR pattern found with EasyOCR: {match}, smaller: {smaller}")
 
