@@ -80,13 +80,13 @@ class PDFProcessor(QWidget):
         # Header layout
         header_layout = QHBoxLayout()
 
-        # Radio buttons for "Plans" and "Specifications"
+        # Radio buttons for "PLANS" and "SPECIFICATIONS"
         self.radio_group = QButtonGroup(self)
-        self.plans_radio = QRadioButton("Plans")
-        self.specifications_radio = QRadioButton("Specifications")
+        self.plans_radio = QRadioButton("PLANS")
+        self.specifications_radio = QRadioButton("SPECIFICATIONS")
         self.radio_group.addButton(self.plans_radio)
         self.radio_group.addButton(self.specifications_radio)
-        self.plans_radio.setChecked(True)  # Default to "Plans"
+        self.plans_radio.setChecked(True)  # Default to "PLANS"
 
         # Connect radio buttons to save state method
         self.plans_radio.toggled.connect(self.save_radio_button_state)
@@ -255,7 +255,7 @@ class PDFProcessor(QWidget):
         logging.info("Started extracting unprocessed PDFs")
 
     def get_current_filter_type(self):
-        return "Plans" if self.plans_radio.isChecked() else "Specifications"
+        return "PLANS" if self.plans_radio.isChecked() else "SPECIFICATIONS"
 
     def update_file_list_container(self, new_files=None):
         if new_files is None:
@@ -407,7 +407,7 @@ class PDFProcessor(QWidget):
             QMessageBox.critical(self, "Error", f"Error opening PDF: {e}")
 
     def save_radio_button_state(self):
-        state = "Plans" if self.plans_radio.isChecked() else "Specifications"
+        state = "PLANS" if self.plans_radio.isChecked() else "SPECIFICATIONS"
         with open("radio_button_state.txt", "w") as file:
             file.write(state)
         logging.info(f"Radio button state saved: {state}")
@@ -416,7 +416,7 @@ class PDFProcessor(QWidget):
         if os.path.exists("radio_button_state.txt"):
             with open("radio_button_state.txt", "r") as file:
                 state = file.read().strip()
-            if state == "Plans":
+            if state == "PLANS":
                 self.plans_radio.setChecked(True)
             else:
                 self.specifications_radio.setChecked(True)

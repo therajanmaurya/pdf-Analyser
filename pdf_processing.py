@@ -87,11 +87,11 @@ def preprocess_image(image):
 def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folder, filter_type):
     logging.info("Checking for image pattern in the page.")
 
-    if filter_type == "Plans":
+    if filter_type == "PLANS":
         # Define the region of interest (bottom-right 250x150 pixels)
         width, height = fitz_page.rect.width, fitz_page.rect.height
         box = pymupdf.Rect(width - 280, height - 150, width, height)
-    elif filter_type == "Specifications":
+    elif filter_type == "SPECIFICATIONS":
         # Define the region of interest as double the region of width and height
         width, height = fitz_page.rect.width, fitz_page.rect.height
         box = pymupdf.Rect(width - 300, height - 200, width, height)
@@ -123,9 +123,9 @@ def image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_folde
     text_preprocessed_black_easyocr = ' '.join(ocr_result_preprocessed_black_easyocr)
     logging.info(f"Extracted text (preprocessed black) with EasyOCR: {text_preprocessed_black_easyocr}")
 
-    if filter_type == "Plans":
+    if filter_type == "PLANS":
         match = any(text.startswith('M') for text in ocr_result_preprocessed_black_easyocr)
-    elif filter_type == "Specifications":
+    elif filter_type == "SPECIFICATIONS":
         match = any(text.startswith('23') for text in ocr_result_preprocessed_black_easyocr)
 
     logging.info(f"OCR pattern found with EasyOCR: {match}")
