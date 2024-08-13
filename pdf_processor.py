@@ -8,7 +8,7 @@ import logging
 import os
 import subprocess
 import time
-from pdf_processing import create_filtered_pdf
+from pdf_processing import create_filtered_pdf, create_pdf_between_indices
 from PyPDF2 import PdfReader
 import resources_rc
 
@@ -462,13 +462,20 @@ class ExtractWorker(QObject):
         if self._is_canceled:
             return
 
-        filtered_pdf = create_filtered_pdf(file, self.filter_type, progress_callback)
-        self.filtered_files.insert(index, filtered_pdf)  # Store the filtered PDF path
+        filtered_pdf = None  # Initialize to None
 
-        # Emit the signal to enable the Open button once the file is filtered
-        self.enable_open_button.emit(index)
+        if self.filter_type == "PLANS":
+            filtered_pdf = create_filtered_pdf(file, self.filter_type, progress_callback)
+        elif self.filter_type == "SPECIFICATIONS":
+            filtered_pdf = create_pdf_between_indices(file, progress_callback)
 
-        logging.info(f"Finished extracting file: {file}")
+        if filtered_pdf:  # Check if a valid PDF was created
+            self.filtered_files.insert(index, filtered_pdf)  # Store the filtered PDF path
+            # Emit the signal to enable the Open button once the file is filtered
+            self.enable_open_button.emit(index)
+            logging.info(f"Finished extracting file: {file}")
+        else:
+            logging.error(f"Failed to create filtered PDF for file: {file}")
 
     def cancel(self):
         logging.info("Cancelling extraction")
