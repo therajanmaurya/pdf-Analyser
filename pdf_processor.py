@@ -74,6 +74,10 @@ class PDFProcessor(QWidget):
         self.setGeometry(0, 0, width, height)
         self.move((screen_geometry.width() - width) // 2, (screen_geometry.height() - height) // 2)
 
+        # https://htmlcolorcodes.com/colors/shades-of-gray/
+        # Set background color to grey
+        self.setStyleSheet("background-color: #71797E;")  # Add this line
+
         # Main layout
         self.layout = QVBoxLayout()
 
