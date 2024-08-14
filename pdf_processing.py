@@ -168,23 +168,28 @@ def spec_image_has_bottom_right_pattern(fitz_page, page_num, pdf_cropped_images_
     logging.info(f"Extracted text (preprocessed black) with EasyOCR: {text_preprocessed_black_easyocr}")
 
     match = False
-    smaller = False
+    match_text = ""
     for text in ocr_result_preprocessed_black_easyocr:
         logging.info(f"Checking text: {text}")
+
+        if text.startswith('2'):
+            match_text = text
 
         # Determine if the text starts with "23"
         if text.startswith('23'):
             match = True
+            match_text = text
             logging.info("Match found: Text starts with '23'")
+            break
 
-        try:
-            # Take only the first two characters to check if it's smaller than 23
-            number = int(text[:2])
-            smaller = number < 23
-            logging.info(f"Extracted number: {number}, smaller: {smaller}")
-        except ValueError:
-            logging.error(f"Failed to convert {text[:2]} to int.")
-            smaller = False
+    try:
+        # Take only the first two characters to check if it's smaller than 23
+        number = int(match_text[:2])
+        smaller = number < 23
+        logging.info(f"Extracted number: {number}, smaller: {smaller}")
+    except ValueError:
+        logging.error(f"Failed to convert {match_text[:2]} to int.")
+        smaller = None
 
     logging.info(f"OCR pattern found with EasyOCR: {match}, smaller: {smaller}")
 
@@ -203,43 +208,67 @@ def create_pdf_between_indices(pdf_file, progress_callback=None):
 
     # Load the PDF and initialize variables
     reader = PdfReader(pdf_file)
-    writer = PdfWriter()
     total_pages = len(reader.pages)
     fitz_document = pymupdf.open(pdf_file)
     logging.info(f"Total pages in the PDF: {total_pages}")
 
-    # Initialize first and last index to the first and last pages of the PDF
     first_index = 0
     last_index = total_pages - 1
 
-    # Perform binary search from the top
-    first_index = binary_search_from_top(fitz_document, total_pages, first_index)
+    # Perform binary search to find the first matching index
+    first_match_index = binary_search_from_top(fitz_document, total_pages, 0)
 
-    # Perform binary search from the bottom
-    last_index = binary_search_from_bottom(fitz_document, total_pages, last_index)
-
-    logging.info(f"First page index with '23' pattern: {first_index}")
-    logging.info(f"Last page index with '23' pattern: {last_index}")
-
-    if first_index > last_index:
-        logging.error("First index is greater than last index, something went wrong.")
+    if first_match_index == 0:
+        logging.error("No matching page found.")
         return None
 
+    logging.info(f"First matching page index with '23' pattern: {first_match_index}")
+
+    # Add pages upward from first_match_index until a page with a smaller number than '23' is found
+    for page_num in range(first_match_index, -1, -1):
+        fitz_page = fitz_document.load_page(page_num)
+        match, smaller = spec_image_has_bottom_right_pattern(fitz_page, page_num, '')
+
+        if match:
+            logging.info(f"Page {page_num} match - '23'")
+            first_index = page_num
+        elif smaller is None:
+            logging.info(f"Page {page_num} has an undefined 'smaller' value, skipping page.")
+            continue
+        elif smaller:
+            first_index = page_num
+            logging.info(f"Page {page_num} has a smaller value, stopping upward search.")
+            break
+
+    # Add pages from first_match_index downwards until a page with a number greater than or equal to '23' is found
+    for page_num in range(first_match_index + 1, total_pages):
+        fitz_page = fitz_document.load_page(page_num)
+        match, smaller = spec_image_has_bottom_right_pattern(fitz_page, page_num, '')
+
+        if match:
+            logging.info(f"Page {page_num} match - '23'")
+            last_index = page_num
+        elif smaller is None:
+            logging.info(f"Page {page_num} has an undefined 'smaller' value, skipping page.")
+            continue
+        elif not smaller:
+            last_index = page_num
+            logging.info(f"Page {page_num} has a smaller value, stopping downward search.")
+            break
+
+    # Create a new PDF with pages from first_index to last_index
     new_pdf_path = os.path.join(PROCESSING_PDFS_FOLDER,
                                 f"{os.path.splitext(os.path.basename(pdf_file))[0]}_filtered_range.pdf")
     logging.info(f"New filtered PDF will be saved to: {new_pdf_path}")
 
-    # Add pages between the found indices to the new PDF
+    writer = PdfWriter()
     for page_num in range(first_index, last_index + 1):
         writer.add_page(reader.pages[page_num])
-        if progress_callback:
-            progress = int((page_num - first_index + 1) / (last_index - first_index + 1) * 100)
-            progress_callback(progress)
-            logging.info(f"Progress: {progress}%")
 
+    # Write the final filtered PDF
     with open(new_pdf_path, 'wb') as out_pdf:
         writer.write(out_pdf)
-    logging.info(f"Filtered PDF created successfully between pages {first_index} and {last_index}: {new_pdf_path}")
+    logging.info(f"Filtered PDF created successfully from pages {first_index} to {last_index}: {new_pdf_path}")
 
     return new_pdf_path
 
@@ -252,42 +281,23 @@ def binary_search_from_top(fitz_document, total_pages, first_index):
 
     while low <= high:
         mid = (low + high) // 2
+        logging.info(f"binary_search_from_top -> Low: {low}, High: {high}, Mid: {mid}, Found Index: {found_index}")
+
         fitz_page = fitz_document.load_page(mid)
         match, smaller = spec_image_has_bottom_right_pattern(fitz_page, mid, '')
 
         if match:
             # If we find a match, we update the found_index and continue searching in the lower half
             found_index = mid
-            high = mid - 1  # Continue searching towards the start to find the first occurrence
+            return mid
 
-        elif smaller:
+        if smaller:
             low = mid + 1  # Continue searching from the current index upwards
+        elif not smaller:
+            high = mid - 1
+        elif smaller is None:
+            low = low + 1
 
-        else:
-            high = mid - 1  # Continue searching towards the start
-
+    logging.info(
+        f"binary_search_from_top Final Found Index from top: {found_index}, returning: {found_index if found_index != -1 else first_index}")
     return found_index if found_index != -1 else first_index  # Return found_index or the initial index if not found
-
-
-def binary_search_from_bottom(fitz_document, total_pages, last_index):
-    """Performs a binary search to find the first page matching the '23' pattern from the bottom."""
-    low = 0
-    high = last_index
-    found_index = -1  # Initialize with an invalid index
-
-    while low <= high:
-        mid = (low + high + 1) // 2
-        fitz_page = fitz_document.load_page(mid)
-        match, smaller = spec_image_has_bottom_right_pattern(fitz_page, mid, '')
-
-        if match:
-            found_index = mid
-            low = mid + 1  # Continue searching upwards (towards the bottom)
-
-        elif smaller:
-            high = mid - 1  # Continue searching in the lower half (towards the top)
-
-        else:
-            high = mid - 1  # Continue searching in the lower half (towards the top)
-
-    return found_index if found_index != -1 else last_index  # Return the found index or the initial last index
