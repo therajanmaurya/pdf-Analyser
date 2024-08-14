@@ -364,9 +364,17 @@ class PDFProcessor(QWidget):
 
         elapsed_time = int(time.time() - self.start_times[index])  # Calculate elapsed time
 
+        # Format elapsed time
+        if elapsed_time < 60:
+            formatted_time = f"{elapsed_time}s"
+        else:
+            minutes = elapsed_time // 60
+            seconds = elapsed_time % 60
+            formatted_time = f"{minutes}m {seconds}s"
+
         progress_percentage_label, progress_timer_label = self.progress_labels[index]
         progress_percentage_label.setText(f"{progress}%")  # Update the percentage label
-        progress_timer_label.setText(f"{elapsed_time}s")  # Update the timer label
+        progress_timer_label.setText(formatted_time)  # Update the timer label
 
         logging.info(f"Progress for file {index}: {progress}%")
 
