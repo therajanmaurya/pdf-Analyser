@@ -36,7 +36,7 @@ class CircularProgress(QWidget):
         layout.addWidget(self.label)
 
         # Load the spinning GIF (Replace with your own spinner.gif)
-        movie = QMovie("spinner.gif")
+        movie = QMovie(":/spinner.gif")
         self.label.setMovie(movie)
         movie.start()
 
@@ -76,7 +76,7 @@ class PDFProcessor(QWidget):
 
         # https://htmlcolorcodes.com/colors/shades-of-gray/
         # Set background color to grey
-        self.setStyleSheet("background-color: #71797E;")  # Add this line
+        ##self.setStyleSheet("background-color: #71797E;")  # Add this line
 
         # Main layout
         self.layout = QVBoxLayout()
