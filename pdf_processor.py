@@ -226,6 +226,20 @@ class PDFProcessor(QWidget):
         logging.info("States reset, ready for new extraction.")
 
     def extract_all_pdfs(self):
+        # Check if the filter type is "SPECIFICATIONS"
+        if self.get_current_filter_type() == "SPECIFICATIONS":
+            # Check if any file name contains "spec" (case-insensitive)
+            contains_spec = any("spec" in os.path.basename(file).lower() for file in self.selected_files)
+
+            if not contains_spec:
+                # Show a warning dialog
+                reply = QMessageBox.question(self, 'Warning',
+                                             "Are you sure, you selected Specifications files?",
+                                             QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+                if reply == QMessageBox.Cancel:
+                    logging.info("User cancelled the extraction process for SPECIFICATIONS.")
+                    return  # Do not start the extraction process
+
         unprocessed_indices = [i for i, pb in enumerate(self.progress_bars) if pb.value() < 100]
 
         if not unprocessed_indices:
