@@ -240,6 +240,12 @@ def create_pdf_between_indices(pdf_file, progress_callback=None):
             logging.info(f"Page {page_num} has a smaller value, stopping upward search.")
             break
 
+        # Update progress during upward processing
+        if progress_callback:
+            progress = int((first_match_index - page_num + 1) / total_pages * 50)  # First half (0-50%)
+            progress_callback(progress)
+            logging.info(f"Progress: {progress}% (Upward)")
+
     # Add pages from first_match_index downwards until a page with a number greater than or equal to '23' is found
     for page_num in range(first_match_index + 1, total_pages):
         fitz_page = fitz_document.load_page(page_num)
@@ -256,6 +262,12 @@ def create_pdf_between_indices(pdf_file, progress_callback=None):
             logging.info(f"Page {page_num} has a smaller value, stopping downward search.")
             break
 
+        # Update progress during downward processing
+        if progress_callback:
+            progress = int(50 + (page_num - first_match_index) / total_pages * 50)  # Second half (50-100%)
+            progress_callback(progress)
+            logging.info(f"Progress: {progress}% (Downward)")
+
     # Create a new PDF with pages from first_index to last_index
     new_pdf_path = os.path.join(PROCESSING_PDFS_FOLDER,
                                 f"{os.path.splitext(os.path.basename(pdf_file))[0]}_filtered_range.pdf")
@@ -269,6 +281,8 @@ def create_pdf_between_indices(pdf_file, progress_callback=None):
     with open(new_pdf_path, 'wb') as out_pdf:
         writer.write(out_pdf)
     logging.info(f"Filtered PDF created successfully from pages {first_index} to {last_index}: {new_pdf_path}")
+
+    progress_callback(100)
 
     return new_pdf_path
 
