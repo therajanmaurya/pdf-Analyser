@@ -465,6 +465,8 @@ class ExtractWorker(QObject):
 
     def extract_single_file(self, file, index):
         def progress_callback(progress):
+            if self._is_canceled:
+                raise Exception("Extraction cancelled by user.")
             self.progress.emit(index, progress)
 
         if self._is_canceled:
@@ -472,18 +474,25 @@ class ExtractWorker(QObject):
 
         filtered_pdf = None  # Initialize to None
 
-        if self.filter_type == "PLANS":
-            filtered_pdf = create_filtered_pdf(file, self.filter_type, progress_callback)
-        elif self.filter_type == "SPECIFICATIONS":
-            filtered_pdf = create_pdf_between_indices(file, progress_callback)
+        try:
+            if self.filter_type == "PLANS":
+                filtered_pdf = create_filtered_pdf(file, self.filter_type, progress_callback)
+            elif self.filter_type == "SPECIFICATIONS":
+                filtered_pdf = create_pdf_between_indices(file, progress_callback)
 
-        if filtered_pdf:  # Check if a valid PDF was created
-            self.filtered_files.insert(index, filtered_pdf)  # Store the filtered PDF path
-            # Emit the signal to enable the Open button once the file is filtered
-            self.enable_open_button.emit(index)
-            logging.info(f"Finished extracting file: {file}")
-        else:
-            logging.error(f"Failed to create filtered PDF for file: {file}")
+            if filtered_pdf:  # Check if a valid PDF was created
+                self.filtered_files.insert(index, filtered_pdf)  # Store the filtered PDF path
+                # Emit the signal to enable the Open button once the file is filtered
+                self.enable_open_button.emit(index)
+                logging.info(f"Finished extracting file: {file}")
+            else:
+                logging.error(f"Failed to create filtered PDF for file: {file}")
+
+        except Exception as e:
+            if self._is_canceled:
+                logging.info(f"Extraction canceled for file: {file}")
+            else:
+                logging.error(f"Error during extraction: {e}")
 
     def cancel(self):
         logging.info("Cancelling extraction")
