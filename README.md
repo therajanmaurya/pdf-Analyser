@@ -105,6 +105,13 @@ pyinstaller --onefile --icon=logo.ico --hidden-import=module1 --hidden-import=mo
 pyinstaller --onefile --icon=myicon.ico --strip BruckerCo.py
 ```
 
+- Add Resource Icon
+
+First Add it in project and then add it resources.qrc and run below command
+```sh
+pyrcc5 -o resources_rc.py resources.qrc
+```
+
 ## Features
 
 - Extracts tables from PDF files and saves them as CSV files.

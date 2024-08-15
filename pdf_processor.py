@@ -74,10 +74,6 @@ class PDFProcessor(QWidget):
         self.setGeometry(0, 0, width, height)
         self.move((screen_geometry.width() - width) // 2, (screen_geometry.height() - height) // 2)
 
-        # https://htmlcolorcodes.com/colors/shades-of-gray/
-        # Set background color to grey
-        ##self.setStyleSheet("background-color: #71797E;")  # Add this line
-
         # Main layout
         self.layout = QVBoxLayout()
 
@@ -108,12 +104,18 @@ class PDFProcessor(QWidget):
         # Set an image when there are no files
         self.icon_image = QLabel()
         self.icon_image.setAlignment(Qt.AlignCenter)
-        pixmap = QPixmap(':/brucker_logo.png')  # Set the path to your image file
+        pixmap = QPixmap(':/ocr.png')  # Set the path to your image file
         self.icon_image.setPixmap(pixmap)
         header_layout.addWidget(self.icon_image)
         header_layout.addStretch()
 
         self.layout.addLayout(header_layout)
+
+        # Add OCR text below the icon image
+        #ocr_label = QLabel("OCR")
+        #ocr_label.setAlignment(Qt.AlignCenter)
+        #ocr_label.setStyleSheet("font-weight: bold; font-size: 24px;")
+        #self.layout.addWidget(ocr_label)
 
         # Scroll area for file list and progress bars
         self.scroll_area = QScrollArea()

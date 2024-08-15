@@ -3,6 +3,7 @@
     <qresource>
         <file alias="brucker_logo.png">brucker_logo.png</file>
         <file alias="spinner.gif">spinner.gif</file>
+          <file alias="ocr.png">ocr.png</file>
         <!-- Add other resources here -->
     </qresource>
 </RCC>
