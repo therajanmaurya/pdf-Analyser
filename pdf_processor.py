@@ -101,21 +101,23 @@ class PDFProcessor(QWidget):
         # Add radio layout to the header layout
         header_layout.addLayout(radio_layout)
 
-        # Set an image when there are no files
-        self.icon_image = QLabel()
-        self.icon_image.setAlignment(Qt.AlignCenter)
-        pixmap = QPixmap(':/ocr.png')  # Set the path to your image file
-        self.icon_image.setPixmap(pixmap)
-        header_layout.addWidget(self.icon_image)
-        header_layout.addStretch()
-
-        self.layout.addLayout(header_layout)
+        # # Set an image when there are no files
+        # self.icon_image = QLabel()
+        # self.icon_image.setAlignment(Qt.AlignCenter)
+        # pixmap = QPixmap(':/ocr.png')  # Set the path to your image file
+        # self.icon_image.setPixmap(pixmap)
+        # header_layout.addWidget(self.icon_image)
+        # header_layout.addStretch()
+        #
+        # self.layout.addLayout(header_layout)
 
         # Add OCR text below the icon image
-        #ocr_label = QLabel("OCR")
-        #ocr_label.setAlignment(Qt.AlignCenter)
-        #ocr_label.setStyleSheet("font-weight: bold; font-size: 24px;")
-        #self.layout.addWidget(ocr_label)
+        ocr_label = QLabel("OCR")
+        ocr_label.setAlignment(Qt.AlignCenter)
+        ocr_label.setStyleSheet("font-weight: bold; font-size: 24px;")
+        self.layout.addWidget(ocr_label)
+        header_layout.addStretch()
+        self.layout.addLayout(header_layout)
 
         # Scroll area for file list and progress bars
         self.scroll_area = QScrollArea()
